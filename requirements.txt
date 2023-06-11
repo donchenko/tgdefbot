@@ -1,0 +1,4 @@
+requests
+telebot
+beautifulsoup4
+openai
