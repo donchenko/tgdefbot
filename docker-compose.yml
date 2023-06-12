@@ -11,8 +11,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.bot.rule=Host(`bot.donchenko.in.ua`)"
       - "traefik.http.routers.bot.entrypoints=web"
-    environment:
-      - TOKEN=5878027549:AAFycCgVZmNC9zZLrFGZYp4ZmmvafVgZL6w
 
 networks:
   traefik-proxy:
