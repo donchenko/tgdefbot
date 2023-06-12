@@ -23,6 +23,6 @@ jobs:
         context: .
         push: true
         tags: donchenko/tgdefbot:latest
-        secrets:
-          TOKEN: ${{ secrets.TOKEN }}
-          MERRIAM_WEBSTER_API_KEY: ${{ secrets.MERRIAM_WEBSTER_API_KEY }}
+        build-args: |
+          TOKEN=${{ secrets.TOKEN }}
+          MERRIAM_WEBSTER_API_KEY=${{ secrets.MERRIAM_WEBSTER_API_KEY }}
