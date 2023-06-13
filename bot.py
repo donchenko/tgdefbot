@@ -145,7 +145,7 @@ def format_text(text):
     return text
 
 # Function to send a message in parts to handle long messages
-def send_message_in_parts(chat_id, text, word,  max_length=4096):
+def send_message_in_parts(chat_id, text, word,  max_length=3900):
 
 # Add the YouGlish link to the text
     text += f"\n\nYou can listen to the pronunciation of the word here: https://youglish.com/pronounce/{word}/english"
