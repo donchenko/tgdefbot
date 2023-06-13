@@ -12,6 +12,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install python-dotenv
 
+# Install aiogram
+RUN pip install aiogram
+
 COPY . .
 
 CMD ["python", "bot.py"]
