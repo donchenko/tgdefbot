@@ -81,7 +81,7 @@ def process_user_input(message):
     # Check if the user wants the definition of a word
     else:
         definition = get_definition(text)
-        send_message_in_parts(chat_id, format_text(definition))
+        send_message_in_parts(chat_id, definition, text)
 
 def get_definition(word):
     url = f"https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={MERRIAM_WEBSTER_API_KEY}"
@@ -131,7 +131,7 @@ def get_definition(word):
                                             if 't' in vis_item:
                                                 result += f"- {vis_item['t']}\n"
 
-    return result
+    return format_text(result)
 
 
 # Function to get translation from English to Russian
@@ -140,22 +140,22 @@ def get_translation(word):
     return None
 
 def format_text(text):
-    text = text.replace('{it}', '_').replace('{/it}', '_')
+    text = text.replace('{it}', '<i>').replace('{/it}', '</i>')
     text = text.replace('{phrase}', '*').replace('{/phrase}', '*')
     return text
 
 # Function to send a message in parts to handle long messages
-def send_message_in_parts(chat_id, text, word,  max_length=3900):
+def send_message_in_parts(chat_id, text, word,  max_length=4096):
 
 # Add the YouGlish link to the text
     text += f"\n\nYou can listen to the pronunciation of the word here: https://youglish.com/pronounce/{word}/english"
    
     if len(text) <= max_length:
-        bot.send_message(chat_id, text, parse_mode='Markdown')
+        bot.send_message(chat_id, text)
     else:
         parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
         for part in parts:
-            bot.send_message(chat_id, part, parse_mode='Markdown')
+            bot.send_message(chat_id, part)
 
 # Start the bot
 if __name__ == "__main__":
