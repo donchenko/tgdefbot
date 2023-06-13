@@ -81,7 +81,7 @@ def process_user_input(message):
     # Check if the user wants the definition of a word
     else:
         definition = get_definition(text)
-        bot.send_message(chat_id, format_text(definition), parse_mode='Markdown')
+        send_message_in_parts(chat_id, format_text(definition))
 
 def get_definition(word):
     url = f"https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={MERRIAM_WEBSTER_API_KEY}"
