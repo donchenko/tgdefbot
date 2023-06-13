@@ -78,8 +78,20 @@ def get_definition(word):
         word = data['hwi']['hw']
         fl = data['fl']
         shortdef = ', '.join(data['shortdef'])
-        ins = ', '.join([i['if'] for i in data['ins']])
-        defs = '\n'.join([d['dt'][0][1] for d in data['def'][0]['sseq'][0]])
+        ins = ', '.join([i['if'] for i in data.get('ins', [])])
+
+        # Extract detailed definitions
+        defs = []
+        try:
+            for d in data['def'][0]['sseq'][0]:
+                if isinstance(d[0], list):
+                    for item in d[0]:
+                        if isinstance(item, dict) and 'dt' in item:
+                            defs.append(item['dt'][0][1])
+        except (IndexError, KeyError, TypeError):
+            pass
+
+        defs = '\n'.join(defs)
 
         return f"Word: {word}\nPart of Speech: {fl}\nShort Definitions: {shortdef}\nOther Forms: {ins}\nDetailed Definitions:\n{defs}"
     else:
