@@ -18,7 +18,7 @@ TOKEN = os.getenv("TOKEN")
 MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 
 # Initialize the Telegram bot
-bot = telebot.TeleBot("TOKEN", parse_mode='MARKDOWN')
+bot = telebot.TeleBot(TOKEN)
 
 # Configure logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -152,11 +152,11 @@ def send_message_in_parts(chat_id, text, word,  max_length=3800):
     text = format_text(text)
 
     if len(text) <= max_length:
-        bot.send_message(chat_id, text)
+        bot.send_message(chat_id, text, parse_mode='MARKDOWN')
     else:
         parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
         for part in parts:
-            bot.send_message(chat_id, part)
+            bot.send_message(chat_id, part, parse_mode='MARKDOWN')
 
 # Start the bot
 if __name__ == "__main__":
