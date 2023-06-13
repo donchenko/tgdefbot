@@ -81,7 +81,7 @@ def process_user_input(message):
     # Check if the user wants the definition of a word
     else:
         definition = get_definition(text)
-        send_message_in_parts(chat_id, definition, text)
+        bot.send_message(chat_id, format_text(definition), parse_mode='Markdown')
 
 def get_definition(word):
     url = f"https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={MERRIAM_WEBSTER_API_KEY}"
@@ -131,7 +131,7 @@ def get_definition(word):
                                             if 't' in vis_item:
                                                 result += f"- {vis_item['t']}\n"
 
-    return format_text(result)
+    return result
 
 
 # Function to get translation from English to Russian
