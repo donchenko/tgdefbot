@@ -92,14 +92,12 @@ def get_definition(word):
 
             # Extract detailed definitions
             defs = []
-            try:
-                for d in entry['def'][0]['sseq'][0]:
-                    if isinstance(d[0], list):
-                        for item in d[0]:
+            for sseq in entry['def'][0]['sseq']:
+                for sense in sseq:
+                    if isinstance(sense, list):
+                        for item in sense:
                             if isinstance(item, dict) and 'dt' in item:
                                 defs.append(item['dt'][0][1])
-            except (IndexError, KeyError, TypeError):
-                pass
             defs = '\n'.join(defs)
 
             # Extract metadata
