@@ -131,18 +131,13 @@ def get_definition(word):
                                             if 't' in vis_item:
                                                 result += f"- {vis_item['t']}\n"
 
-    return format_text(result)
+    return result
 
 
 # Function to get translation from English to Russian
 def get_translation(word):
     # Implement translation logic here or use an existing translation API
     return None
-
-def format_text(text):
-    text = text.replace('{it}', '<i>').replace('{/it}', '</i>')
-    text = text.replace('{phrase}', '*').replace('{/phrase}', '*')
-    return text
 
 # Function to send a message in parts to handle long messages
 def send_message_in_parts(chat_id, text, word,  max_length=4096):
