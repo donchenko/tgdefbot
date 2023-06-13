@@ -140,8 +140,8 @@ def get_translation(word):
     return None
 
 def format_text(text):
-    text = text.replace('{it}', '<i>').replace('{/it}', '</i>')
-    text = text.replace('{phrase}', '*').replace('{/phrase}', '*')
+    text = text.replace('{it}', '__').replace('{/it}', '__')
+    text = text.replace('{phrase}', '**').replace('{/phrase}', '**')
     return text
 
 # Function to send a message in parts to handle long messages
