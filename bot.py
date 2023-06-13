@@ -73,38 +73,42 @@ def get_definition(word):
     url = f"https://dictionaryapi.com/api/v3/references/learners/json/{word}?key={MERRIAM_WEBSTER_API_KEY}"
     response = requests.get(url)
     if response.status_code == 200:
-        data = json.loads(response.text)[0]
+        data = json.loads(response.text)
 
-        # Extract headword information
-        word = data['hwi']['hw']
-        prs = ', '.join([p['ipa'] for p in data['hwi']['prs']])
+        definitions = []
+        for entry in data:
+            # Extract headword information
+            word = entry['hwi']['hw']
+            prs = ', '.join([p['ipa'] for p in entry['hwi']['prs']])
 
-        # Extract functional label
-        fl = data['fl']
+            # Extract functional label
+            fl = entry['fl']
 
-        # Extract other forms of the word
-        ins = ', '.join([i['if'] for i in data.get('ins', [])])
+            # Extract other forms of the word
+            ins = ', '.join([i['if'] for i in entry.get('ins', [])])
 
-        # Extract short definitions
-        shortdef = ', '.join(data['shortdef'])
+            # Extract short definitions
+            shortdef = ', '.join(entry['shortdef'])
 
-        # Extract detailed definitions
-        defs = []
-        try:
-            for d in data['def'][0]['sseq'][0]:
-                if isinstance(d[0], list):
-                    for item in d[0]:
-                        if isinstance(item, dict) and 'dt' in item:
-                            defs.append(item['dt'][0][1])
-        except (IndexError, KeyError, TypeError):
-            pass
-        defs = '\n'.join(defs)
+            # Extract detailed definitions
+            defs = []
+            try:
+                for d in entry['def'][0]['sseq'][0]:
+                    if isinstance(d[0], list):
+                        for item in d[0]:
+                            if isinstance(item, dict) and 'dt' in item:
+                                defs.append(item['dt'][0][1])
+            except (IndexError, KeyError, TypeError):
+                pass
+            defs = '\n'.join(defs)
 
-        # Extract metadata
-        id = data['meta']['id']
-        src = data['meta']['src']
+            # Extract metadata
+            id = entry['meta']['id']
+            src = entry['meta']['src']
 
-        return f"Word: {word}\nPronunciation: {prs}\nPart of Speech: {fl}\nOther Forms: {ins}\nShort Definitions: {shortdef}\nDetailed Definitions:\n{defs}\nID: {id}\nSource: {src}"
+            definitions.append(f"Word: {word}\nPronunciation: {prs}\nPart of Speech: {fl}\nOther Forms: {ins}\nShort Definitions: {shortdef}\nDetailed Definitions:\n{defs}\nID: {id}\nSource: {src}")
+
+        return '\n\n'.join(definitions)
     else:
         return "Error in API request."
 
