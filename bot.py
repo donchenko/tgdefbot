@@ -140,7 +140,7 @@ def get_translation(word):
     return None
 
 def format_text(text):
-    text = text.replace('{it}', '_').replace('{/it}', '_')
+    text = text.replace('{it}', '<i>').replace('{/it}', '</i>')
     text = text.replace('{phrase}', '*').replace('{/phrase}', '*')
     return text
 
@@ -151,11 +151,11 @@ def send_message_in_parts(chat_id, text, word,  max_length=4096):
     text += f"\n\nYou can listen to the pronunciation of the word here: https://youglish.com/pronounce/{word}/english"
    
     if len(text) <= max_length:
-        bot.send_message(chat_id, text, parse_mode='Markdown')
+        bot.send_message(chat_id, text)
     else:
         parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
         for part in parts:
-            bot.send_message(chat_id, part, parse_mode='Markdown')
+            bot.send_message(chat_id, part)
 
 # Start the bot
 if __name__ == "__main__":
