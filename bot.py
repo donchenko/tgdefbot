@@ -75,10 +75,18 @@ def get_definition(word):
     if response.status_code == 200:
         data = json.loads(response.text)[0]
 
+        # Extract headword information
         word = data['hwi']['hw']
+        prs = ', '.join([p['ipa'] for p in data['hwi']['prs']])
+
+        # Extract functional label
         fl = data['fl']
-        shortdef = ', '.join(data['shortdef'])
+
+        # Extract other forms of the word
         ins = ', '.join([i['if'] for i in data.get('ins', [])])
+
+        # Extract short definitions
+        shortdef = ', '.join(data['shortdef'])
 
         # Extract detailed definitions
         defs = []
@@ -90,12 +98,16 @@ def get_definition(word):
                             defs.append(item['dt'][0][1])
         except (IndexError, KeyError, TypeError):
             pass
-
         defs = '\n'.join(defs)
 
-        return f"Word: {word}\nPart of Speech: {fl}\nShort Definitions: {shortdef}\nOther Forms: {ins}\nDetailed Definitions:\n{defs}"
+        # Extract metadata
+        id = data['meta']['id']
+        src = data['meta']['src']
+
+        return f"Word: {word}\nPronunciation: {prs}\nPart of Speech: {fl}\nOther Forms: {ins}\nShort Definitions: {shortdef}\nDetailed Definitions:\n{defs}\nID: {id}\nSource: {src}"
     else:
         return "Error in API request."
+
 
 # Start the bot
 if __name__ == "__main__":
