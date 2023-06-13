@@ -133,6 +133,11 @@ def get_definition(word):
 
     return result
 
+# Function for formatting text from dictionary to telegram
+def format_text(text):
+    text = text.replace('{it}', '_').replace('{/it}', '_')
+    text = text.replace('{phrase}', '*').replace('{/phrase}', '*')
+    return text
 
 # Function to get translation from English to Russian
 def get_translation(word):
@@ -140,11 +145,12 @@ def get_translation(word):
     return None
 
 # Function to send a message in parts to handle long messages
-def send_message_in_parts(chat_id, text, word,  max_length=4096):
+def send_message_in_parts(chat_id, text, word,  max_length=3800):
 
 # Add the YouGlish link to the text
     text += f"\n\nYou can listen to the pronunciation of the word here: https://youglish.com/pronounce/{word}/english"
-   
+    text = format_text(text)
+    
     if len(text) <= max_length:
         bot.send_message(chat_id, text)
     else:
