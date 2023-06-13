@@ -1,30 +1,94 @@
+import os
 import requests
 import json
-from aiogram import Bot, types
-from aiogram.dispatcher import Dispatcher
-from aiogram.utils import executor
+import random
+import time
+import telebot
+from telebot import types
+from dotenv import load_dotenv
 
-bot = Bot(token='5878027549:AAFycCgVZmNC9zZLrFGZYp4ZmmvafVgZL6w')
-dp = Dispatcher(bot)
+# Load environment variables from .env file
+load_dotenv()
 
-@dp.message_handler(commands=['start'])
-async def process_start_command(message: types.Message):
-    await message.reply("Hello! I'm a bot for learning English. Send me a word and I'll give you its definition.")
+# Telegram bot token
+TOKEN = os.getenv("TOKEN")
 
-@dp.message_handler()
-async def echo_message(msg: types.Message):
-    word = msg.text
-    response = requests.get(f'https://dictionaryapi.com/api/v3/references/learners/json/{word}?key=33f93937-0d40-43f0-92cf-791974312d6d')
-    data = response.json()[0]
+# Merriam-Webster API key
+MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 
-    word = data['hwi']['hw']
-    fl = data['fl']
-    shortdef = ', '.join(data['shortdef'])
-    ins = ', '.join([i['if'] for i in data['ins']])
-    defs = '\n'.join([d['dt'][0][1] for d in data['def'][0]['sseq'][0]])
+# Initialize the Telegram bot
+bot = telebot.TeleBot(TOKEN)
 
-    message = f"Word: {word}\nPart of Speech: {fl}\nShort Definitions: {shortdef}\nOther Forms: {ins}\nDetailed Definitions:\n{defs}"
-    await bot.send_message(msg.from_user.id, message)
+# Handler for the "/start" command
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, "Welcome to the English learning bot!")
 
-if __name__ == '__main__':
-    executor.start_polling(dp)
+# Handler for the "/help" command
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    help_message = """
+Here are the available commands:
+- /start: Start the bot
+- /add [word]: Add a word to your local dictionary
+- /remove [word]: Remove a word from your local dictionary
+- /reminder: Get a random word reminder from your local dictionary
+- /help: Show this help message
+"""
+    bot.reply_to(message, help_message)
+
+# Handler for processing user input
+@bot.message_handler(func=lambda message: True)
+def process_user_input(message):
+    chat_id = message.chat.id
+    text = message.text.lower()
+
+    # Check if the user wants to add the word to the local dictionary
+    if text.startswith('/add'):
+        word = text.split(' ', 1)[1]
+        local_dictionary[word] = None
+        bot.send_message(chat_id, f"The word '{word}' has been added to your local dictionary.")
+
+    # Check if the user wants to remove a word from the local dictionary
+    elif text.startswith('/remove'):
+        word = text.split(' ', 1)[1]
+        if word in local_dictionary:
+            del local_dictionary[word]
+            bot.send_message(chat_id, f"The word '{word}' has been removed from your local dictionary.")
+        else:
+            bot.send_message(chat_id, f"The word '{word}' is not present in your local dictionary.")
+
+    # Check if the user wants a random word reminder
+    elif text.startswith('/reminder'):
+        random_word = random.choice(list(local_dictionary.keys()))
+        local_dictionary[random_word] = time.time()
+        bot.send_message(chat_id, f"Here's a random word from your local dictionary: {random_word}")
+
+    # Check if the user wants the definition of a word
+    else:
+        definition = get_definition(text)
+        bot.send_message(chat_id, definition)
+
+def get_definition(word):
+    url = f"https://dictionaryapi.com/api/v3/references/learners/json/{word}?key={MERRIAM_WEBSTER_API_KEY}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = json.loads(response.text)[0]
+
+        word = data['hwi']['hw']
+        fl = data['fl']
+        shortdef = ', '.join(data['shortdef'])
+        ins = ', '.join([i['if'] for i in data['ins']])
+        defs = '\n'.join([d['dt'][0][1] for d in data['def'][0]['sseq'][0]])
+
+        return f"Word: {word}\nPart of Speech: {fl}\nShort Definitions: {shortdef}\nOther Forms: {ins}\nDetailed Definitions:\n{defs}"
+    else:
+        return "Error in API request."
+
+# Start the bot
+if __name__ == "__main__":
+
+    # Local dictionary to store user-added words
+    local_dictionary = {}
+
+    bot.polling()
