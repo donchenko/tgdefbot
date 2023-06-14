@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import logging
 
-# Load environment variables from .env file
+# 1Load environment variables from .env file
 load_dotenv()
 
 # Telegram bot token
