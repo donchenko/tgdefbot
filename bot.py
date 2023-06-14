@@ -150,18 +150,19 @@ def get_translation(word):
     return None
 
 # Function to send a message in parts to handle long messages
-def send_message_in_parts(chat_id, text, word,  max_length=3800):
-
-# Add the YouGlish link to the text
-    text += f"\n\nYou can listen to the pronunciation of the word here: https://youglish.com/pronounce/{word}/english"
-    text = format_text(text)
-
-    if len(text) <= max_length:
-        bot.send_message(chat_id, text)
-    else:
-        parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
-        for part in parts:
-            bot.send_message(chat_id, part)
+def send_message_in_parts(chat_id, text, parse_mode='Markdown'):
+    MAX_MESSAGE_LENGTH = 4096
+    messages = []
+    while len(text) > MAX_MESSAGE_LENGTH:
+        part = text[:MAX_MESSAGE_LENGTH]
+        last_newline = part.rfind('\n')
+        if last_newline != -1:
+            part = part[:last_newline]
+        messages.append(part)
+        text = text[len(part):]
+    messages.append(text)
+    for message in messages:
+        bot.send_message(chat_id, message, parse_mode=parse_mode)
 
 # Start the bot
 if __name__ == "__main__":
