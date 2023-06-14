@@ -83,9 +83,22 @@ def process_user_input(message):
         definition = get_definition(text)
         send_message_in_parts(chat_id, definition, text)
 
+def log_request(request_type, word, success=True, error_message=None):
+    if success:
+        logging.info(f"{request_type} request for word '{word}' was successful.")
+    else:
+        logging.error(f"{request_type} request for word '{word}' failed. Error: {error_message}")
+
+
 def get_definition(word):
     url = f"https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={MERRIAM_WEBSTER_API_KEY}"
-    response = requests.get(url)
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # This will raise an exception if the request failed
+        log_request("definition", word)
+    except requests.exceptions.RequestException as e:
+        log_request("definition", word, success=False, error_message=str(e))
+        return "No definition found due to an error."
     data = response.json()
 
     if not data:
