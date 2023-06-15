@@ -1,4 +1,4 @@
-FROM python:3.9-slim
+FROM python:3.9-slim-bullseye
 
 ARG TOKEN
 ARG MERRIAM_WEBSTER_API_KEY
