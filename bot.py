@@ -142,7 +142,15 @@ def get_definition(word):
 def format_text(text):
     text = text.replace('{it}', '_').replace('{/it}', '_')
     text = text.replace('{phrase}', '*').replace('{/phrase}', '*')
+
+    # Ensure all formatting symbols are paired
+    if text.count('_') % 2 != 0:
+        text = text.replace('_', '')  # Remove all unpaired '_'
+    if text.count('*') % 2 != 0:
+        text = text.replace('*', '')  # Remove all unpaired '*'
+
     return text
+
 
 # Function to get translation from English to Russian
 def get_translation(word):
@@ -157,7 +165,7 @@ def send_message_in_parts(chat_id, text, word,  max_length=3800):
     text = format_text(text)
 
     if len(text) <= max_length:
-        bot.send_message(chat_id, text)
+        bot.send_message(chat_id, text, parse_mode='Markdown')
     else:
         parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
         for part in parts:
