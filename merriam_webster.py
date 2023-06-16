@@ -1,3 +1,6 @@
+# Merriam-Webster API key
+MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
+
 def get_definition(word):
     url = f"https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={MERRIAM_WEBSTER_API_KEY}"
     try:

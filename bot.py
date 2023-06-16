@@ -17,9 +17,6 @@ load_dotenv()
 # Telegram bot token
 TOKEN = os.getenv("TOKEN")
 
-# Merriam-Webster API key
-MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
-
 # Initialize the Telegram bot
 bot = telebot.TeleBot(TOKEN, num_threads=10)
 
