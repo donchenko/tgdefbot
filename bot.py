@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import logging
 
 # Import Modules
-import merriam_webster
+from merriam_webster import get_definition
 
 # 1Load environment variables from .env file
 load_dotenv()
