@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
 
     steps:
@@ -29,14 +30,15 @@ jobs:
 
     - name: Run and check the container
       run: |
-        docker run --rm -d -e TOKEN=${{ secrets.TOKEN }} -e MERRIAM_WEBSTER_API_KEY=${{ secrets.MERRIAM_WEBSTER_API_KEY }} --name test_container ${{ secrets.DOCKER_HUB_USERNAME }}/tgdefbot:latest python test_bot.py
+        docker run -d -e TOKEN=${{ secrets.TOKEN }} -e MERRIAM_WEBSTER_API_KEY=${{ secrets.MERRIAM_WEBSTER_API_KEY }} --name test_container ${{ secrets.DOCKER_HUB_USERNAME }}/tgdefbot:latest python test_bot.py
         sleep 10
         if docker logs test_container | grep "Test passed"; then
           echo "Tests passed, container is working correctly"
         else
           echo "Tests failed, container is not working correctly" && exit 1
         fi
-
+        docker rm test_container
+    
     - name: Push to DockerHub
       uses: docker/build-push-action@v2
       with:
