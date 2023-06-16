@@ -30,7 +30,7 @@ jobs:
 
     - name: Run and check the container
       run: |
-        docker run --rm -d --name test_container ${{ secrets.DOCKER_HUB_USERNAME }}/tgdefbot:latest
+      docker run --rm -d -e TOKEN=${{ secrets.TOKEN }} -e MERRIAM_WEBSTER_API_KEY=${{ secrets.MERRIAM_WEBSTER_API_KEY }} --name test_container ${{ secrets.DOCKERHUB_USERNAME }}/tgdefbot:latest
         sleep 10
         if docker logs test_container | grep "Starting the bot"; then
           echo "Container started successfully"
