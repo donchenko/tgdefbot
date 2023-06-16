@@ -10,5 +10,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install python-dotenv
 
 COPY ./bot.py .
+COPY ./test_bot.py .
 
 CMD ["python", "bot.py"]
