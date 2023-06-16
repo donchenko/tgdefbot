@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -30,11 +29,12 @@ jobs:
 
     - name: Run and check the container
       run: |
-        
-        if docker run --rm -e TOKEN=${{ secrets.TOKEN }} -e MERRIAM_WEBSTER_API_KEY=${{ secrets.MERRIAM_WEBSTER_API_KEY }} --name test_container ${{ secrets.DOCKER_HUB_USERNAME }}/tgdefbot:latest | grep "Starting the bot"; then
-          echo "Container started successfully"
+        docker run --rm -d -e TOKEN=${{ secrets.TOKEN }} -e MERRIAM_WEBSTER_API_KEY=${{ secrets.MERRIAM_WEBSTER_API_KEY }} --name test_container ${{ secrets.DOCKER_HUB_USERNAME }}/tgdefbot:latest python test_bot.py
+        sleep 10
+        if docker logs test_container | grep "Test passed"; then
+          echo "Tests passed, container is working correctly"
         else
-          echo "Container failed to start" && exit 1
+          echo "Tests failed, container is not working correctly" && exit 1
         fi
 
     - name: Push to DockerHub
@@ -43,3 +43,10 @@ jobs:
         context: .
         push: true
         tags: ${{ secrets.DOCKER_HUB_USERNAME }}/tgdefbot:latest
+
+    - name: Notify Telegram
+      uses: appleboy/telegram-action@master
+      with:
+        to: 59666312
+        token: ${{ secrets.TOKEN }}
+        message: "Build completed successfully"
