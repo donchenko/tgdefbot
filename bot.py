@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import logging
 
+# Import Modules
+import merriam_webster
+
 # 1Load environment variables from .env file
 load_dotenv()
 
