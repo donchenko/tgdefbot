@@ -11,6 +11,5 @@ RUN pip install python-dotenv
 
 COPY ./bot.py .
 COPY ./test_bot.py .
-COPY ./merriam_webster.py .
 
 CMD ["python", "bot.py"]
