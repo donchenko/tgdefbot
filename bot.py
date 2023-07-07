@@ -98,43 +98,47 @@ def get_definition(word):
     except requests.exceptions.RequestException as e:
         log_request("definition", word, success=False, error_message=str(e))
         return "No definition found due to an error."
+
     data = response.json()
     if not data:
         return "No definition found."
+
     result = ""
     for entry in data:
-        if 'fl' in entry:
+        # Using get() method to avoid KeyError
+        if entry.get('fl'):
             result += f"\n\nPart of Speech: {entry['fl']}\n"
-        if 'shortdef' in entry:
+        if entry.get('shortdef'):
             result += "\nDefinitions:\n"
             for definition in entry['shortdef']:
                 result += f"- {definition}\n"
-        if 'dros' in entry:
+        if entry.get('dros'):
             result += "\nSpelling Suggestions:\n"
             for suggestion in entry['dros']:
                 result += f"- {suggestion}\n"
-        if 'art' in entry and 'artid' in entry['art']:
+        if entry.get('art') and entry['art'].get('artid'):
             result += f"\nIllustration: {entry['art']['artid']}\n"
-        if 'hwi' in entry and 'prs' in entry['hwi']:
+        if entry.get('hwi') and entry['hwi'].get('prs'):
             result += "\nPronunciations:\n"
             for pr in entry['hwi']['prs']:
-                if 'mw' in pr:
+                if pr.get('mw'):
                     result += f"- {pr['mw']}\n"
-                if 'sound' in pr and 'audio' in pr['sound']:
+                if pr.get('sound') and pr['sound'].get('audio'):
                     result += f"Audio: https://media.merriam-webster.com/soundc11/{word[0]}/{pr['sound']['audio']}.wav\n"
-        if 'def' in entry:
+        if entry.get('def'):
             result += "\nUsage Examples:\n"
             for def_item in entry['def']:
-                if 'sseq' in def_item:
+                if def_item.get('sseq'):
                     for sseq_item in def_item['sseq']:
                         for item in sseq_item:
-                            if isinstance(item, list) and len(item) > 1 and 'dt' in item[1]:
+                            if isinstance(item, list) and len(item) > 1 and item[1].get('dt'):
                                 for dt_item in item[1]['dt']:
                                     if isinstance(dt_item, list) and len(dt_item) > 1 and isinstance(dt_item[1], list):
                                         for vis_item in dt_item[1]:
-                                            if isinstance(vis_item, dict) and 't' in vis_item:
+                                            if isinstance(vis_item, dict) and vis_item.get('t'):
                                                 result += f"- {vis_item['t']}\n"
     return result
+
 
 
 # Function for formatting text from dictionary to telegram
