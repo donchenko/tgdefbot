@@ -136,8 +136,6 @@ def get_definition(word):
     return result
 
 
-
-
 # Function for formatting text from dictionary to telegram
 def format_text(text):
     text = text.replace('{it}', '_').replace('{/it}', '_')
