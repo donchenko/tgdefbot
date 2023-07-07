@@ -112,10 +112,6 @@ def get_definition(word):
             result += "\nDefinitions:\n"
             for definition in entry['shortdef']:
                 result += f"- {definition}\n"
-        if entry.get('dros'):
-            result += "\nSpelling Suggestions:\n"
-            for suggestion in entry['dros']:
-                result += f"- {suggestion}\n"
         if entry.get('art') and entry['art'].get('artid'):
             result += f"\nIllustration: {entry['art']['artid']}\n"
         if entry.get('hwi') and entry['hwi'].get('prs'):
@@ -138,6 +134,7 @@ def get_definition(word):
                                             if isinstance(vis_item, dict) and vis_item.get('t'):
                                                 result += f"- {vis_item['t']}\n"
     return result
+
 
 
 
