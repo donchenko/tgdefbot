@@ -1,3 +1,4 @@
 requests
 telebot
 beautifulsoup4
+python-dotenv
