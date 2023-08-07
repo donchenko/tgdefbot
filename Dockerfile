@@ -18,5 +18,6 @@ COPY --from=builder /app /app
 # Copy the rest of the code.
 COPY ./bot.py .
 COPY ./test_bot.py .
+COPY ./utils ./utils  # Add this line to copy the utils directory
 
 CMD ["python", "bot.py"]
