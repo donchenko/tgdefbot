@@ -16,10 +16,7 @@ WORKDIR /app
 COPY --from=builder /app /app
 
 # Copy the rest of the code.
-# COPY ./bot.py .
-# COPY ./test_bot.py .
-# COPY ./utils .  # Add this line to copy the utils directory
-
-COPY . .
+COPY ./bot.py .
+COPY ./test_bot.py .
 
 CMD ["python", "bot.py"]

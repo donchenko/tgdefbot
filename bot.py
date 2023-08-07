@@ -6,8 +6,17 @@ from telebot import types
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import logging
+import os
+from dotenv import load_dotenv
 
-from utils.constants import TOKEN, MERRIAM_WEBSTER_API_KEY
+# Load environment variables from .env file
+load_dotenv()
+
+# Telegram bot token
+TOKEN = os.getenv("TOKEN")
+
+# Merriam-Webster API key
+MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 
 # Initialize the Telegram bot
 bot = telebot.TeleBot(TOKEN, num_threads=10)
