@@ -20,6 +20,9 @@ jobs:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+    - name: List files
+      run: ls -R
+
     - name: Build and push
       id: docker_build
       uses: docker/build-push-action@v2
