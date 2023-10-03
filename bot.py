@@ -151,6 +151,8 @@ def format_text(text):
     return text
 
 
+
+
 # Function to get translation from English to Russian
 def get_translation(word):
     # Implement translation logic here or use an existing translation API
@@ -169,6 +171,15 @@ def send_message_in_parts(chat_id, text, word,  max_length=3800):
         parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
         for part in parts:
             bot.send_message(chat_id, part)
+
+# Создание инлайн-клавиатуры
+markup = types.InlineKeyboardMarkup()
+btn = types.InlineKeyboardButton("Добавить в словарь", callback_data=f"add_{text}")
+markup.add(btn)
+
+# Отправка сообщения с инлайн-клавиатурой
+bot.send_message(chat_id, "Хотите добавить это слово в ваш словарь?", reply_markup=markup)
+
 
 # Start the bot
 if __name__ == "__main__":
