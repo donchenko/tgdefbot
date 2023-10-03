@@ -83,14 +83,14 @@ def process_user_input(message):
     else:
         definition = get_definition(text)
         send_message_in_parts(chat_id, definition, text)
-
         # Создание инлайн-клавиатуры
-markup = types.InlineKeyboardMarkup()
-btn = types.InlineKeyboardButton("Добавить в словарь", callback_data=f"add_{text}")
-markup.add(btn)
+        markup = types.InlineKeyboardMarkup()
+        btn = types.InlineKeyboardButton("Добавить в словарь", callback_data=f"add_{text}")
+        markup.add(btn)
 
-# Отправка сообщения с инлайн-клавиатурой
-bot.send_message(chat_id, "Хотите добавить это слово в ваш словарь?", reply_markup=markup)
+        # Отправка сообщения с инлайн-клавиатурой
+        bot.send_message(chat_id, "Хотите добавить это слово в ваш словарь?", reply_markup=markup)  
+
 
 
 def log_request(request_type, word, success=True, error_message=None):
