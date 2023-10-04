@@ -12,6 +12,10 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+psqlUser = os.getenv("POSTGRES_USER")
+psqlPassword = os.getenv("POSTGRES_PASSWORD")
+psqlDb = os.getenv("POSTGRES_DB")
+
 # Telegram bot token
 TOKEN = os.getenv("TOKEN")
 
