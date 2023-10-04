@@ -3,4 +3,3 @@ telebot
 beautifulsoup4
 python-dotenv
 libpq-dev
-psycopg2
