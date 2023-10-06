@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt --target=/app
 COPY ./bot.py .
 COPY ./test_bot.py .
 COPY ./database.py .
+COPY ./utilities.py .
 
 
 CMD ["python", "bot.py"]
