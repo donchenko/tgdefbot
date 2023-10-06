@@ -18,5 +18,7 @@ COPY --from=builder /app /app
 # Copy the rest of the code.
 COPY ./bot.py .
 COPY ./test_bot.py .
+COPY ./database.py .
+
 
 CMD ["python", "bot.py"]
