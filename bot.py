@@ -9,6 +9,8 @@ import logging
 import os
 from dotenv import load_dotenv
 from database import add_word_to_db, remove_word_from_db, find_word_in_db
+from utilities import log_request, get_definition, format_text, get_translation
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -97,13 +99,6 @@ def process_user_input(message):
         bot.send_message(chat_id, "Хотите добавить это слово в ваш словарь?", reply_markup=markup)  
 
 
-
-def log_request(request_type, word, success=True, error_message=None):
-    if success:
-        logging.info(f"{request_type} request for word '{word}' was successful.")
-    else:
-        logging.error(f"{request_type} request for word '{word}' failed. Error: {error_message}")
-
 def get_definition(word):
     url = f"https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={MERRIAM_WEBSTER_API_KEY}"
     try:
@@ -149,28 +144,6 @@ def get_definition(word):
                                             if isinstance(vis_item, dict) and vis_item.get('t'):
                                                 result += f"- {vis_item['t']}\n"
     return result
-
-
-# Function for formatting text from dictionary to telegram
-def format_text(text):
-    text = text.replace('{it}', '_').replace('{/it}', '_')
-    text = text.replace('{phrase}', '*').replace('{/phrase}', '*')
-
-    # Ensure all formatting symbols are paired
-    if text.count('_') % 2 != 0:
-        text = text.replace('_', '')  # Remove all unpaired '_'
-    if text.count('*') % 2 != 0:
-        text = text.replace('*', '')  # Remove all unpaired '*'
-
-    return text
-
-
-
-
-# Function to get translation from English to Russian
-def get_translation(word):
-    # Implement translation logic here or use an existing translation API
-    return None
 
 # Function to send a message in parts to handle long messages
 def send_message_in_parts(chat_id, text, word,  max_length=3800):
