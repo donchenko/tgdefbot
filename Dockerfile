@@ -11,10 +11,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt --target=/app
 
 # Copy the rest of the code.
-COPY ./bot.py .
-COPY ./test_bot.py .
-COPY ./database.py .
-COPY ./utilities.py .
+COPY src/ /app/src/
+COPY main.py /app/
 
 
-CMD ["python", "bot.py"]
+CMD ["python", "main.py"]
