@@ -112,7 +112,7 @@ def send_message_in_parts(chat_id, text, word,  max_length=3800):
     else:
         parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
         for part in parts:
-            bot.send_message(chat_id, part)
+            bot.send_message(chat_id, part, parse_mode='Markdown')
 
 # Start the bot
 if __name__ == "__main__":
