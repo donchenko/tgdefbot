@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import logging
 import os
 from dotenv import load_dotenv
+from database import add_word_to_db, remove_word_from_db, find_word_in_db
 
 # Load environment variables from .env file
 load_dotenv()
