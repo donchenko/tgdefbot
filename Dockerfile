@@ -1,3 +1,6 @@
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim-bullseye
+
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y libpq-dev libpq5 gcc
