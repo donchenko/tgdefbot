@@ -3,6 +3,8 @@ FROM python:3.9-slim-bullseye as builder
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y libpq-dev gcc
+
 COPY requirements.txt .
 # Install the dependencies into a directory that we can easily copy in the next stage.
 RUN pip install --no-cache-dir -r requirements.txt --target=/app
