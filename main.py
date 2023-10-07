@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 from src.database import add_word_to_db, remove_word_from_db, find_word_in_db
 from src.utilities import log_request, get_definition, format_text, get_translation
 
+# Init Database
+import db_init
 
 # Load environment variables from .env file
 load_dotenv()
