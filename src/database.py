@@ -1,15 +1,18 @@
+import os
 import psycopg2
 from psycopg2 import OperationalError
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def connect_to_db():
     try:
-        # Replace these values with your database credentials
         conn = psycopg2.connect(
-            dbname="your_db_name",
-            user="your_db_user",
-            password="your_db_password",
-            host="your_db_host",
-            port="your_db_port"
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("DB_HOST"),
+            port=os.getenv("DB_PORT")
         )
         return conn
     except OperationalError as e:
