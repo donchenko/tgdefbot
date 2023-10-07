@@ -12,11 +12,11 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 conn = psycopg2.connect(
-    host=DB_HOST,
-    port=DB_PORT,
-    dbname=DB_NAME,
-    user=DB_USER,
-    password=DB_PASSWORD
+    host=db,
+    port=5432,
+    dbname=tgdefbot,
+    user=tgdefbot,
+    password=mysecretpassword
 )
 
 cursor = conn.cursor()
