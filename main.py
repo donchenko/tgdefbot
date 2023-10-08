@@ -17,10 +17,6 @@ import src.db_init
 # Load environment variables from .env file
 load_dotenv()
 
-psqlUser = os.getenv("POSTGRES_USER")
-psqlPassword = os.getenv("POSTGRES_PASSWORD")
-psqlDb = os.getenv("POSTGRES_DB")
-
 # Telegram bot token
 TOKEN = os.getenv("TOKEN")
 
@@ -100,6 +96,15 @@ def process_user_input(message):
         # Отправка сообщения с инлайн-клавиатурой
         bot.send_message(chat_id, "Хотите добавить это слово в ваш словарь?", reply_markup=markup)  
 
+@bot.callback_query_handler(func=lambda call: True)
+def callback_inline(call):
+    if call.message:
+        if call.data.startswith("add_"):
+            word_to_add = call.data[4:]
+            user_id = call.message.chat.id
+            # Добавление слова в базу данных
+            add_word_to_db(user_id, word_to_add)
+            bot.answer_callback_query(call.id, "Слово добавлено в ваш словарь.")
 
 
 # Function to send a message in parts to handle long messages
