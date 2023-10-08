@@ -101,11 +101,9 @@ def callback_inline(call):
     if call.message:
         if call.data.startswith("add_"):
             word_to_add = call.data[4:]
-            user_id = call.message.chat.id
-            # Добавление слова в базу данных
-            add_word_to_db(user_id, word_to_add)
+            user_id = call.message.chat.id  # Получаем user_id из сообщения
+            add_word_to_db(word_to_add, user_id)  # Передаем оба аргумента в функцию
             bot.answer_callback_query(call.id, "Слово добавлено в ваш словарь.")
-
 
 # Function to send a message in parts to handle long messages
 def send_message_in_parts(chat_id, text, word,  max_length=3800):
