@@ -22,11 +22,25 @@ def connect_to_db():
 def add_word_to_db(word, user_id):
     conn = connect_to_db()
     cursor = conn.cursor()
-    query = "INSERT INTO UserWords (user_id, word) VALUES (%s, %s)"
-    cursor.execute(query, (user_id, word))
+
+    # Проверяем, существует ли уже это слово в таблице Words
+    cursor.execute("SELECT word_id FROM Words WHERE word = %s", (word,))
+    word_id = cursor.fetchone()
+    
+    if word_id is None:
+        # Добавляем слово в таблицу Words, если его там нет
+        cursor.execute("INSERT INTO Words (word) VALUES (%s) RETURNING word_id", (word,))
+        word_id = cursor.fetchone()[0]
+    else:
+        word_id = word_id[0]
+
+    # Добавляем связь между пользователем и словом в таблицу UserWords
+    cursor.execute("INSERT INTO UserWords (user_id, word_id) VALUES (%s, %s)", (user_id, word_id))
+
     conn.commit()
     cursor.close()
     conn.close()
+
 
 
 def remove_word_from_db(word, user_id):
