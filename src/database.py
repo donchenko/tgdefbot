@@ -22,7 +22,7 @@ def connect_to_db():
 def add_word_to_db(word, user_id):
     conn = connect_to_db()
     cursor = conn.cursor()
-    query = "INSERT INTO user_dictionary (user_id, word) VALUES (%s, %s)"
+    query = "INSERT INTO UserWords (user_id, word) VALUES (%s, %s)"
     cursor.execute(query, (user_id, word))
     conn.commit()
     cursor.close()
