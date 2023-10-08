@@ -23,6 +23,14 @@ def add_word_to_db(word, user_id):
     conn = connect_to_db()
     cursor = conn.cursor()
 
+    # Проверяем, существует ли уже этот пользователь в таблице Users
+    cursor.execute("SELECT user_id FROM Users WHERE user_id = %s", (user_id,))
+    existing_user_id = cursor.fetchone()
+    
+    if existing_user_id is None:
+        # Добавляем пользователя в таблицу Users, если его там нет
+        cursor.execute("INSERT INTO Users (user_id) VALUES (%s)", (user_id,))
+
     # Проверяем, существует ли уже это слово в таблице Words
     cursor.execute("SELECT word_id FROM Words WHERE word = %s", (word,))
     word_id = cursor.fetchone()
@@ -40,6 +48,7 @@ def add_word_to_db(word, user_id):
     conn.commit()
     cursor.close()
     conn.close()
+
 
 
 
