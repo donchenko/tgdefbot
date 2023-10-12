@@ -48,6 +48,17 @@ def send_help(message):
     """
     bot.reply_to(message, help_message)
 
+
+@bot.message_handler(commands=['showwords'])
+def show_all_words(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id  # Get user_id from message
+    words = get_all_words_from_db(user_id)  # Fetch all words for this user from the database
+    if words:
+        bot.send_message(chat_id, "\n".join(words))
+    else:
+        bot.send_message(chat_id, "Your dictionary is empty.")
+
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
 def process_user_input(message):
@@ -106,15 +117,7 @@ def callback_inline(call):
             bot.answer_callback_query(call.id, "Word added to your dictionary.")
 
 
-@bot.message_handler(commands=['showwords'])
-def show_all_words(message):
-    chat_id = message.chat.id
-    user_id = message.from_user.id  # Get user_id from message
-    words = get_all_words_from_db(user_id)  # Fetch all words for this user from the database
-    if words:
-        bot.send_message(chat_id, "\n".join(words))
-    else:
-        bot.send_message(chat_id, "Your dictionary is empty.")
+
 
 
 # Function to send a message in parts to handle long messages
