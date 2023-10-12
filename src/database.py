@@ -53,7 +53,11 @@ def add_word_to_db(word, user_id):
 def get_all_words_from_db(user_id):
     conn = connect_to_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT word FROM UserWords WHERE user_id = %s", (user_id,))
+    cursor.execute("""
+        SELECT Words.word FROM UserWords
+        JOIN Words ON UserWords.word_id = Words.word_id
+        WHERE UserWords.user_id = %s
+    """, (user_id,))
     words = [row[0] for row in cursor.fetchall()]
     cursor.close()
     conn.close()
