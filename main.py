@@ -88,22 +88,22 @@ def process_user_input(message):
     else:
         definition = get_definition(text)
         send_message_in_parts(chat_id, definition, text)
-        # Создание инлайн-клавиатуры
+        # Create inline keyboard
         markup = types.InlineKeyboardMarkup()
-        btn = types.InlineKeyboardButton("Добавить в словарь", callback_data=f"add_{text}")
+        btn = types.InlineKeyboardButton("Add to Dictionary", callback_data=f"add_{text}")
         markup.add(btn)
 
-        # Отправка сообщения с инлайн-клавиатурой
-        bot.send_message(chat_id, "Хотите добавить это слово в ваш словарь?", reply_markup=markup)  
+        # Send message with inline keyboard
+        bot.send_message(chat_id, "Would you like to add this word to your dictionary?", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.message:
         if call.data.startswith("add_"):
             word_to_add = call.data[4:]
-            user_id = call.message.chat.id  # Получаем user_id из сообщения
-            add_word_to_db(word_to_add, user_id)  # Передаем оба аргумента в функцию
-            bot.answer_callback_query(call.id, "Слово добавлено в ваш словарь.")
+            user_id = call.message.chat.id  # Get user_id from message
+            add_word_to_db(word_to_add, user_id)  # Pass both arguments to function
+            bot.answer_callback_query(call.id, "Word added to your dictionary.")
 
 # Function to send a message in parts to handle long messages
 def send_message_in_parts(chat_id, text, word,  max_length=3800):
