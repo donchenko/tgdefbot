@@ -105,6 +105,18 @@ def callback_inline(call):
             add_word_to_db(word_to_add, user_id)  # Pass both arguments to function
             bot.answer_callback_query(call.id, "Word added to your dictionary.")
 
+
+@bot.message_handler(commands=['showwords'])
+def show_all_words(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id  # Get user_id from message
+    words = get_all_words_from_db(user_id)  # Fetch all words for this user from the database
+    if words:
+        bot.send_message(chat_id, "\n".join(words))
+    else:
+        bot.send_message(chat_id, "Your dictionary is empty.")
+
+
 # Function to send a message in parts to handle long messages
 def send_message_in_parts(chat_id, text, word,  max_length=3800):
 
