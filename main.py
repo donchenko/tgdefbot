@@ -111,7 +111,7 @@ def process_user_input(message):
     text = message.text.lower()
 
     # Check if the user wants to receive a translation
-    elif text.startswith('/translate'):
+    if text.startswith('/translate'):
         word = text.split(' ', 1)[1]
         translation = get_translation(word)
         if translation:
