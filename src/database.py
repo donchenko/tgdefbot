@@ -50,7 +50,7 @@ def add_word_to_db(word, user_id):
     conn.close()
 
 def delete_word_from_db(word, user_id):
-    conn = get_db_connection()  # Your function to get a database connection
+    conn = connect_to_db()  # Your function to get a database connection
     cursor = conn.cursor()
 
     # First, get the word_id
