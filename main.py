@@ -53,13 +53,18 @@ def send_help(message):
 def show_all_words(message, page=1, user_id=None):
     if not user_id:
         user_id = message.from_user.id  # Get user_id from message if not provided
+        logging.debug(f"User ID was not provided. Fetched from message: {user_id}")
+
     chat_id = message.chat.id
     user_id = message.from_user.id
+
+    logging.info(f"Fetching all words for User ID: {user_id}")
     words = get_all_words_from_db(user_id)
     
     if words:
         markup = types.InlineKeyboardMarkup()
-        
+        logging.debug(f"Fetched words: {words}")
+
         # Show words for the current page
         for word in words[(page-1)*5:page*5]:
             btn = types.InlineKeyboardButton(word, callback_data=f"define_{word}")
@@ -73,6 +78,7 @@ def show_all_words(message, page=1, user_id=None):
         
         bot.send_message(chat_id, "Your dictionary:", reply_markup=markup)
     else:
+        logging.warning("No words found for the user.")
         bot.send_message(chat_id, "Your dictionary is empty.")
 
 @bot.callback_query_handler(func=lambda call: True)
