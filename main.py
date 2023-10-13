@@ -100,7 +100,9 @@ def callback_inline(call):
             bot.answer_callback_query(call.id, "Word added to your dictionary.")
 
         elif call.data == "showwords":
+            logging.info("Button 'Dictionary' was pressed.")
             user_id = call.message.chat.id  # Get user_id from callback query
+            logging.info(f"User ID: {user_id}")
             show_all_words(call.message, user_id=user_id)  # Pass user_id to function
 
         elif call.data.startswith("page_"):
