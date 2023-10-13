@@ -49,6 +49,13 @@ def add_word_to_db(word, user_id):
     cursor.close()
     conn.close()
 
+def delete_word_from_db(word, user_id):
+    conn = connect_to_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM UserWords WHERE word = %s AND user_id = %s", (word, user_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 def get_all_words_from_db(user_id):
     conn = connect_to_db()

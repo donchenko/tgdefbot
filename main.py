@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import logging
 import os
 from dotenv import load_dotenv
-from src.database import add_word_to_db, get_all_words_from_db, remove_word_from_db, find_word_in_db
+from src.database import add_word_to_db, get_all_words_from_db, remove_word_from_db, find_word_in_db, delete_word_from_db
 from src.utilities import log_request, get_definition, format_text, get_translation
 
 # Init Database
@@ -79,6 +79,11 @@ def callback_inline(call):
         if call.data.startswith("define_"):
             word_to_define = call.data[7:]
             definition = get_definition(word_to_define)
+
+            markup = types.InlineKeyboardMarkup()
+            markup.add(types.InlineKeyboardButton("Dictionary", callback_data="showwords"))
+            markup.add(types.InlineKeyboardButton("Delete Word", callback_data=f"delete_{word_to_define}"))
+
             bot.send_message(call.message.chat.id, definition)
         elif call.data.startswith("page_"):
             page = int(call.data[5:])
