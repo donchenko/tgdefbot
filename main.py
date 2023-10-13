@@ -83,8 +83,17 @@ def callback_inline(call):
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("Dictionary", callback_data="showwords"))
             markup.add(types.InlineKeyboardButton("Delete Word", callback_data=f"delete_{word_to_define}"))
+            bot.send_message(call.message.chat.id, definition, reply_markup=markup)
 
-            bot.send_message(call.message.chat.id, definition)
+        elif call.data.startswith("delete_"):
+            word_to_delete = call.data[7:]
+            user_id = call.message.chat.id
+            delete_word_from_db(word_to_delete, user_id)  # Assuming you have this function in your database.py
+            bot.answer_callback_query(call.id, "Word deleted from your dictionary.")
+
+        elif call.data == "showwords":
+            show_all_words(call.message)  # Existing function to show all words
+
         elif call.data.startswith("page_"):
             page = int(call.data[5:])
             show_all_words(call.message, page)
