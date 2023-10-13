@@ -50,14 +50,29 @@ def send_help(message):
 
 
 @bot.message_handler(commands=['showwords'])
-def show_all_words(message):
+def show_all_words(message, page=1):
     chat_id = message.chat.id
-    user_id = message.from_user.id  # Get user_id from message
-    words = get_all_words_from_db(user_id)  # Fetch all words for this user from the database
+    user_id = message.from_user.id
+    words = get_all_words_from_db(user_id)
+    
     if words:
-        bot.send_message(chat_id, "\n".join(words))
+        markup = types.InlineKeyboardMarkup()
+        
+        # Show words for the current page
+        for word in words[(page-1)*5:page*5]:
+            btn = types.InlineKeyboardButton(word, callback_data=f"define_{word}")
+            markup.add(btn)
+        
+        # Add navigation buttons
+        if page > 1:
+            markup.add(types.InlineKeyboardButton("<< Prev", callback_data=f"page_{page-1}"))
+        if len(words) > page * 5:
+            markup.add(types.InlineKeyboardButton("Next >>", callback_data=f"page_{page+1}"))
+        
+        bot.send_message(chat_id, "Your dictionary:", reply_markup=markup)
     else:
         bot.send_message(chat_id, "Your dictionary is empty.")
+
 
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
