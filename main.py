@@ -90,6 +90,12 @@ def callback_inline(call):
             user_id = call.message.chat.id
             delete_word_from_db(word_to_delete, user_id)  # Assuming you have this function in your database.py
             bot.answer_callback_query(call.id, "Word deleted from your dictionary.")
+        
+        elif call.data.startswith("add_"):
+            word_to_add = call.data[4:]
+            user_id = call.message.chat.id  # Get user_id from message
+            add_word_to_db(word_to_add, user_id)  # Pass both arguments to function
+            bot.answer_callback_query(call.id, "Word added to your dictionary.")
 
         elif call.data == "showwords":
             show_all_words(call.message)  # Existing function to show all words
@@ -104,12 +110,6 @@ def process_user_input(message):
     chat_id = message.chat.id
     text = message.text.lower()
 
-    # Check if the user wants to add the word to the local dictionary
-    if text.startswith('/add'):
-        word = text.split(' ', 1)[1]
-        local_dictionary[word] = None
-        send_message_in_parts(chat_id, f"The word '{word}' has been added to your local dictionary.")
-    
     # Check if the user wants to receive a translation
     elif text.startswith('/translate'):
         word = text.split(' ', 1)[1]
@@ -118,15 +118,6 @@ def process_user_input(message):
             send_message_in_parts(chat_id, f"The translation of '{word}' in Russian is '{translation}'.")
         else:
             send_message_in_parts(chat_id, f"Translation not found for the word '{word}'.")
-    
-    # Check if the user wants to remove a word from the local dictionary
-    elif text.startswith('/remove'):
-        word = text.split(' ', 1)[1]
-        if word in local_dictionary:
-            del local_dictionary[word]
-            send_message_in_parts(chat_id, f"The word '{word}' has been removed from your local dictionary.")
-        else:
-            send_message_in_parts(chat_id, f"The word '{word}' is not present in your local dictionary.")
     
     # Check if the user wants a random word reminder
     elif text.startswith('/reminder'):
@@ -145,19 +136,6 @@ def process_user_input(message):
 
         # Send message with inline keyboard
         bot.send_message(chat_id, "Would you like to add this word to your dictionary?", reply_markup=markup)
-
-@bot.callback_query_handler(func=lambda call: True)
-def callback_inline(call):
-    if call.message:
-        if call.data.startswith("add_"):
-            word_to_add = call.data[4:]
-            user_id = call.message.chat.id  # Get user_id from message
-            add_word_to_db(word_to_add, user_id)  # Pass both arguments to function
-            bot.answer_callback_query(call.id, "Word added to your dictionary.")
-
-
-
-
 
 # Function to send a message in parts to handle long messages
 def send_message_in_parts(chat_id, text, word,  max_length=3800):
