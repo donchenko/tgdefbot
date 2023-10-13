@@ -50,12 +50,22 @@ def add_word_to_db(word, user_id):
     conn.close()
 
 def delete_word_from_db(word, user_id):
-    conn = connect_to_db()
+    conn = get_db_connection()  # Your function to get a database connection
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM UserWords WHERE word = %s AND user_id = %s", (word, user_id))
-    conn.commit()
+
+    # First, get the word_id
+    cursor.execute("SELECT word_id FROM Words WHERE word = %s", (word,))
+    result = cursor.fetchone()
+    if result:
+        word_id = result[0]
+
+        # Now, delete the entry from UserWords
+        cursor.execute("DELETE FROM UserWords WHERE user_id = %s AND word_id = %s", (user_id, word_id))
+        conn.commit()
+
     cursor.close()
     conn.close()
+
 
 def get_all_words_from_db(user_id):
     conn = connect_to_db()
