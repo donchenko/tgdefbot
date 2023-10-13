@@ -50,7 +50,9 @@ def send_help(message):
 
 
 @bot.message_handler(commands=['showwords'])
-def show_all_words(message, page=1):
+def show_all_words(message, page=1, user_id=None):
+    if not user_id:
+        user_id = message.from_user.id  # Get user_id from message if not provided
     chat_id = message.chat.id
     user_id = message.from_user.id
     words = get_all_words_from_db(user_id)
@@ -98,7 +100,8 @@ def callback_inline(call):
             bot.answer_callback_query(call.id, "Word added to your dictionary.")
 
         elif call.data == "showwords":
-            show_all_words(call.message)  # Existing function to show all words
+            user_id = call.message.chat.id  # Get user_id from callback query
+            show_all_words(call.message, user_id=user_id)  # Pass user_id to function
 
         elif call.data.startswith("page_"):
             page = int(call.data[5:])
