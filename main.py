@@ -51,12 +51,15 @@ def send_help(message):
 
 @bot.message_handler(commands=['showwords'])
 def show_all_words(message, page=1, user_id=None):
+    
+    user_id = message.from_user.id
+
     if not user_id:
         user_id = message.from_user.id  # Get user_id from message if not provided
         logging.debug(f"User ID was not provided. Fetched from message: {user_id}")
 
     chat_id = message.chat.id
-    user_id = message.from_user.id
+    
 
     logging.info(f"Fetching all words for User ID: {user_id}")
     words = get_all_words_from_db(user_id)
