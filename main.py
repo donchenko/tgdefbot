@@ -73,6 +73,16 @@ def show_all_words(message, page=1):
     else:
         bot.send_message(chat_id, "Your dictionary is empty.")
 
+@bot.callback_query_handler(func=lambda call: True)
+def callback_inline(call):
+    if call.message:
+        if call.data.startswith("define_"):
+            word_to_define = call.data[7:]
+            definition = get_definition(word_to_define)
+            bot.send_message(call.message.chat.id, definition)
+        elif call.data.startswith("page_"):
+            page = int(call.data[5:])
+            show_all_words(call.message, page)
 
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
