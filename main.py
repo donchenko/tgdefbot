@@ -94,6 +94,12 @@ def callback_inline(call):
             page = int(call.data[5:])
             show_all_words(call.message, page)
 
+# Обработчик callback_data для пагинации
+@bot.callback_query_handler(func=lambda call: call.data.startswith("page_"))
+def handle_page_callback(call):
+    page = int(call.data.split("_")[1])
+    show_all_words(call.message, page)
+
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
 def process_user_input(message):
