@@ -89,23 +89,21 @@ def callback_inline(call):
         elif call.data.startswith("delete_"):
             word_to_delete = call.data[7:]
             user_id = call.message.chat.id
-            delete_word_from_db(word_to_delete, user_id)  # Assuming you have this function in your database.py
+            delete_word_from_db(word_to_delete, user_id)
             bot.answer_callback_query(call.id, "Word deleted from your dictionary.")
         
         elif call.data.startswith("add_"):
             word_to_add = call.data[4:]
-            user_id = call.message.chat.id  # Get user_id from message
-            add_word_to_db(word_to_add, user_id)  # Pass both arguments to function
+            user_id = call.message.chat.id
+            add_word_to_db(word_to_add, user_id)
             bot.answer_callback_query(call.id, "Word added to your dictionary.")
 
         elif call.data == "showwords":
-            logging.info("Button 'Dictionary' was pressed.")
-            user_id = call.message.chat.id  # Get user_id from callback query
-            logging.info(f"User ID: {user_id}")
-            show_all_words(call.message, user_id=user_id)  # Pass user_id to function
+            user_id = call.message.chat.id
+            show_all_words(call.message)
 
         elif call.data.startswith("page_"):
-            page = int(call.data[5:])
+            page = int(call.data.split("_")[1])
             show_all_words(call.message, page)
 
 # Handler for processing user input
@@ -114,7 +112,6 @@ def process_user_input(message):
     chat_id = message.chat.id
     text = message.text.lower()
 
-    # Check if the user wants to receive a translation
     if text.startswith('/translate'):
         word = text.split(' ', 1)[1]
         translation = get_translation(word)
@@ -123,41 +120,31 @@ def process_user_input(message):
         else:
             send_message_in_parts(chat_id, f"Translation not found for the word '{word}'.", word)
     
-    # Check if the user wants a random word reminder
     elif text.startswith('/reminder'):
         random_word = random.choice(list(local_dictionary.keys()))
         local_dictionary[random_word] = time.time()
         send_message_in_parts(chat_id, f"Here's a random word from your local dictionary: {random_word}", random_word)
     
-    # Check if the user wants the definition of a word
     else:
         definition = get_definition(text)
         send_message_in_parts(chat_id, definition, text)
-        # Create inline keyboard
         markup = types.InlineKeyboardMarkup()
         btn = types.InlineKeyboardButton("Add to Dictionary", callback_data=f"add_{text}")
         markup.add(btn)
-
-        # Send message with inline keyboard
         bot.send_message(chat_id, "Would you like to add this word to your dictionary?", reply_markup=markup)
 
 # Function to send a message in parts to handle long messages
 def send_message_in_parts(chat_id, text, word, markup=None, max_length=3800):
-    # Add the YouGlish link to the text
     text += f"\n\nYou can listen to the pronunciation of the word here: https://youglish.com/pronounce/{word}/english"
     text = format_text(text)
 
-    if len(text) <= max_length:
-        bot.send_message(chat_id, text, parse_mode='Markdown', reply_markup=markup)
-    else:
-        parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
-        for part in parts:
-            bot.send_message(chat_id, part, parse_mode='Markdown')
+    parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
+    for part in parts[:-1]:
+        bot.send_message(chat_id, part, parse_mode='Markdown')
+    bot.send_message(chat_id, parts[-1], parse_mode='Markdown', reply_markup=markup)
 
 # Start the bot
 if __name__ == "__main__":
-    # Local dictionary to store user-added words
     local_dictionary = {}
-    
     logging.info("Starting the bot...")
     bot.polling()
