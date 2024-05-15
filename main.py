@@ -40,6 +40,7 @@ def send_help(message):
     help_message = """
     Here are the available commands:
     - /start: Start the bot
+    - /showwords
     - /add [word]: Add a word to your local dictionary
     - /translate [word]: Get the translation of a word to Russian
     - /remove [word]: Remove a word from your local dictionary
