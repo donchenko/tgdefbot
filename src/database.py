@@ -43,29 +43,25 @@ def add_word_to_db(word, user_id):
         word_id = word_id[0]
 
     # Добавляем связь между пользователем и словом в таблицу UserWords
-    cursor.execute("INSERT INTO UserWords (user_id, word_id) VALUES (%s, %s)", (user_id, word_id))
+    cursor.execute("INSERT INTO UserWords (user_id, word_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (user_id, word_id))
 
     conn.commit()
     cursor.close()
     conn.close()
 
 def delete_word_from_db(word, user_id):
-    conn = connect_to_db()  # Your function to get a database connection
+    conn = connect_to_db()
     cursor = conn.cursor()
 
-    # First, get the word_id
     cursor.execute("SELECT word_id FROM Words WHERE word = %s", (word,))
-    result = cursor.fetchone()
-    if result:
-        word_id = result[0]
-
-        # Now, delete the entry from UserWords
+    word_id = cursor.fetchone()
+    if word_id:
+        word_id = word_id[0]
         cursor.execute("DELETE FROM UserWords WHERE user_id = %s AND word_id = %s", (user_id, word_id))
         conn.commit()
 
     cursor.close()
     conn.close()
-
 
 def get_words_from_db(user_id, limit, offset):
     conn = connect_to_db()
@@ -102,13 +98,27 @@ def get_word_count(user_id):
     
     return count
 
-
 def remove_word_from_db(word, user_id):
     conn = connect_to_db()
-    # Logic to remove word from database
-    pass
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT word_id FROM Words WHERE word = %s", (word,))
+    word_id = cursor.fetchone()
+    if word_id:
+        word_id = word_id[0]
+        cursor.execute("DELETE FROM UserWords WHERE user_id = %s AND word_id = %s", (user_id, word_id))
+        conn.commit()
+
+    cursor.close()
+    conn.close()
 
 def find_word_in_db(word):
     conn = connect_to_db()
-    # Logic to find word in database
-    pass
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT word_id FROM Words WHERE word = %s", (word,))
+    word_id = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    return word_id

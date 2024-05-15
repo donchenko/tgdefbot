@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import logging
 import os
-from dotenv import load_dotenv
 from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db
 from src.utilities import log_request, get_definition, format_text, get_translation
 
@@ -27,7 +26,7 @@ MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 bot = telebot.TeleBot(TOKEN, num_threads=10)
 
 # Configure logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levellevelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # Handler for the "/start" command
 @bot.message_handler(commands=['start'])
