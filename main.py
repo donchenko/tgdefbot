@@ -49,41 +49,17 @@ def send_help(message):
     bot.reply_to(message, help_message)
 
 
+# Handler for the "/showwords" command
 @bot.message_handler(commands=['showwords'])
-def show_all_words(message, page=1, user_id=None):
-    
+def show_all_words(message):
     user_id = message.from_user.id
-
-    if not user_id:
-        user_id = message.from_user.id  # Get user_id from message if not provided
-        logging.debug(f"User ID was not provided. Fetched from message: {user_id}")
-
-    chat_id = message.chat.id
-    
-
-    logging.info(f"Fetching all words for User ID: {user_id}")
     words = get_all_words_from_db(user_id)
     
     if words:
-        markup = types.InlineKeyboardMarkup()
-        logging.debug(f"Fetched words: {words}")
-
-        # Show words for the current page
-        for word in words[(page-1)*5:page*5]:
-            btn = types.InlineKeyboardButton(word, callback_data=f"define_{word}")
-            markup.add(btn)
-        
-        # Add navigation buttons
-        if page > 1:
-            markup.add(types.InlineKeyboardButton("<< Prev", callback_data=f"page_{page-1}"))
-        if len(words) > page * 5:
-            markup.add(types.InlineKeyboardButton("Next >>", callback_data=f"page_{page+1}"))
-        
-        bot.send_message(chat_id, "Your dictionary:", reply_markup=markup)
+        words_message = "\n".join(words)
+        bot.reply_to(message, f"Your dictionary:\n{words_message}")
     else:
-        logging.warning("No words found for the user.")
-        bot.send_message(chat_id, "Your dictionary is empty.")
-
+        bot.reply_to(message, "Your dictionary is empty.")
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.message:
