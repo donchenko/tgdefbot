@@ -27,7 +27,7 @@ MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 bot = telebot.TeleBot(TOKEN, num_threads=10)
 
 # Configure logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levellevelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # Handler for the "/start" command
 @bot.message_handler(commands=['start'])
@@ -40,7 +40,6 @@ def send_help(message):
     help_message = """
     Here are the available commands:
     - /start: Start the bot
-    - /showwords
     - /add [word]: Add a word to your local dictionary
     - /translate [word]: Get the translation of a word to Russian
     - /remove [word]: Remove a word from your local dictionary
@@ -85,7 +84,7 @@ def callback_inline(call):
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("Dictionary", callback_data="showwords"))
             markup.add(types.InlineKeyboardButton("Delete Word", callback_data=f"delete_{word_to_define}"))
-            bot.send_message(call.message.chat.id, definition, reply_markup=markup)
+            send_message_in_parts(call.message.chat.id, definition, word_to_define, markup)
 
         elif call.data.startswith("delete_"):
             word_to_delete = call.data[7:]
@@ -120,15 +119,15 @@ def process_user_input(message):
         word = text.split(' ', 1)[1]
         translation = get_translation(word)
         if translation:
-            send_message_in_parts(chat_id, f"The translation of '{word}' in Russian is '{translation}'.")
+            send_message_in_parts(chat_id, f"The translation of '{word}' in Russian is '{translation}'.", word)
         else:
-            send_message_in_parts(chat_id, f"Translation not found for the word '{word}'.")
+            send_message_in_parts(chat_id, f"Translation not found for the word '{word}'.", word)
     
     # Check if the user wants a random word reminder
     elif text.startswith('/reminder'):
         random_word = random.choice(list(local_dictionary.keys()))
         local_dictionary[random_word] = time.time()
-        send_message_in_parts(chat_id, f"Here's a random word from your local dictionary: {random_word}")
+        send_message_in_parts(chat_id, f"Here's a random word from your local dictionary: {random_word}", random_word)
     
     # Check if the user wants the definition of a word
     else:
@@ -143,14 +142,13 @@ def process_user_input(message):
         bot.send_message(chat_id, "Would you like to add this word to your dictionary?", reply_markup=markup)
 
 # Function to send a message in parts to handle long messages
-def send_message_in_parts(chat_id, text, word,  max_length=3800):
-
-# Add the YouGlish link to the text
+def send_message_in_parts(chat_id, text, word, markup=None, max_length=3800):
+    # Add the YouGlish link to the text
     text += f"\n\nYou can listen to the pronunciation of the word here: https://youglish.com/pronounce/{word}/english"
     text = format_text(text)
 
     if len(text) <= max_length:
-        bot.send_message(chat_id, text, parse_mode='Markdown')
+        bot.send_message(chat_id, text, parse_mode='Markdown', reply_markup=markup)
     else:
         parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
         for part in parts:
