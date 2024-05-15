@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import logging
 import os
 from dotenv import load_dotenv
-from src.database import add_word_to_db, get_all_words_from_db, remove_word_from_db, find_word_in_db, delete_word_from_db
+from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db
 from src.utilities import log_request, get_definition, format_text, get_translation
 
 # Init Database
@@ -27,7 +27,7 @@ MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 bot = telebot.TeleBot(TOKEN, num_threads=10)
 
 # Configure logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levellevelname)s - %(message)s', level=logging.INFO)
 
 # Handler for the "/start" command
 @bot.message_handler(commands=['start'])
@@ -52,21 +52,24 @@ def send_help(message):
 @bot.message_handler(commands=['showwords'])
 def show_all_words(message, page=1):
     user_id = message.from_user.id
-    words = get_all_words_from_db(user_id)
+    limit = 5
+    offset = (page - 1) * limit
+    words = get_words_from_db(user_id, limit, offset)
+    total_words = get_word_count(user_id)
     
     if words:
         markup = types.InlineKeyboardMarkup()
         logging.debug(f"Fetched words: {words}")
 
         # Show words for the current page
-        for word in words[(page-1)*5:page*5]:
+        for word in words:
             btn = types.InlineKeyboardButton(word, callback_data=f"define_{word}")
             markup.add(btn)
         
         # Add navigation buttons
         if page > 1:
             markup.add(types.InlineKeyboardButton("<< Prev", callback_data=f"page_{page-1}"))
-        if len(words) > page * 5:
+        if total_words > page * limit:
             markup.add(types.InlineKeyboardButton("Next >>", callback_data=f"page_{page+1}"))
         
         bot.send_message(message.chat.id, "Your dictionary:", reply_markup=markup)

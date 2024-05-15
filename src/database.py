@@ -67,18 +67,40 @@ def delete_word_from_db(word, user_id):
     conn.close()
 
 
-def get_all_words_from_db(user_id):
+def get_words_from_db(user_id, limit, offset):
     conn = connect_to_db()
     cursor = conn.cursor()
+    
     cursor.execute("""
-        SELECT Words.word FROM UserWords
-        JOIN Words ON UserWords.word_id = Words.word_id
+        SELECT Words.word
+        FROM Words
+        JOIN UserWords ON Words.word_id = UserWords.word_id
         WHERE UserWords.user_id = %s
-    """, (user_id,))
-    words = [row[0] for row in cursor.fetchall()]
+        LIMIT %s OFFSET %s
+    """, (user_id, limit, offset))
+    
+    words = cursor.fetchall()
     cursor.close()
     conn.close()
-    return words
+    
+    return [word[0] for word in words]
+
+def get_word_count(user_id):
+    conn = connect_to_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM Words
+        JOIN UserWords ON Words.word_id = UserWords.word_id
+        WHERE UserWords.user_id = %s
+    """, (user_id,))
+    
+    count = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+    
+    return count
 
 
 def remove_word_from_db(word, user_id):
