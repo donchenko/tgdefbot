@@ -47,7 +47,6 @@ def send_help(message):
     """
     bot.reply_to(message, help_message)
 
-# Handler for the "/showwords" command
 @bot.message_handler(commands=['showwords'])
 def show_all_words(message, page=1):
     user_id = message.from_user.id
@@ -67,15 +66,20 @@ def show_all_words(message, page=1):
         
         # Add navigation buttons
         if page > 1:
-            markup.add(types.InlineKeyboardButton("<< Prev", callback_data=f"page_{page-1}"))
+            prev_callback_data = f"page_{page-1}"
+            markup.add(types.InlineKeyboardButton("<< Prev", callback_data=prev_callback_data))
+            logging.debug(f"Added Prev button with callback_data: {prev_callback_data}")
+        
         if total_words > page * limit:
-            markup.add(types.InlineKeyboardButton("Next >>", callback_data=f"page_{page+1}"))
+            next_callback_data = f"page_{page+1}"
+            markup.add(types.InlineKeyboardButton("Next >>", callback_data=next_callback_data))
+            logging.debug(f"Added Next button with callback_data: {next_callback_data}")
         
         bot.send_message(message.chat.id, "Your dictionary:", reply_markup=markup)
     else:
         bot.send_message(message.chat.id, "Your dictionary is empty.")
 
-# Обработчик callback_data для пагинации и других действий
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.message:
@@ -106,7 +110,9 @@ def callback_inline(call):
 
         elif call.data.startswith("page_"):
             page = int(call.data.split("_")[1])
+            logging.debug(f"Handling page callback: {page}")
             show_all_words(call.message, page)
+
 
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
