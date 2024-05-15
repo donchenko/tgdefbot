@@ -27,7 +27,7 @@ MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 bot = telebot.TeleBot(TOKEN, num_threads=10)
 
 # Configure logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levellevelname)s - %(message)s', level=logging.INFO)
 
 # Handler for the "/start" command
 @bot.message_handler(commands=['start'])
@@ -48,18 +48,32 @@ def send_help(message):
     """
     bot.reply_to(message, help_message)
 
-
 # Handler for the "/showwords" command
 @bot.message_handler(commands=['showwords'])
-def show_all_words(message):
+def show_all_words(message, page=1):
     user_id = message.from_user.id
     words = get_all_words_from_db(user_id)
     
     if words:
-        words_message = "\n".join(words)
-        bot.reply_to(message, f"Your dictionary:\n{words_message}")
+        markup = types.InlineKeyboardMarkup()
+        logging.debug(f"Fetched words: {words}")
+
+        # Show words for the current page
+        for word in words[(page-1)*5:page*5]:
+            btn = types.InlineKeyboardButton(word, callback_data=f"define_{word}")
+            markup.add(btn)
+        
+        # Add navigation buttons
+        if page > 1:
+            markup.add(types.InlineKeyboardButton("<< Prev", callback_data=f"page_{page-1}"))
+        if len(words) > page * 5:
+            markup.add(types.InlineKeyboardButton("Next >>", callback_data=f"page_{page+1}"))
+        
+        bot.send_message(message.chat.id, "Your dictionary:", reply_markup=markup)
     else:
-        bot.reply_to(message, "Your dictionary is empty.")
+        bot.send_message(message.chat.id, "Your dictionary is empty.")
+
+# Обработчик callback_data для пагинации и других действий
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.message:
@@ -93,12 +107,6 @@ def callback_inline(call):
         elif call.data.startswith("page_"):
             page = int(call.data[5:])
             show_all_words(call.message, page)
-
-# Обработчик callback_data для пагинации
-@bot.callback_query_handler(func=lambda call: call.data.startswith("page_"))
-def handle_page_callback(call):
-    page = int(call.data.split("_")[1])
-    show_all_words(call.message, page)
 
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
