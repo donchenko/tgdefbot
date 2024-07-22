@@ -118,11 +118,13 @@ def callback_inline(call):
         elif action == "showwords":
             logging.info(f"Showing words for user: {user_id}")
             show_all_words(call.message, page=1, user_id=user_id)
-        
+            bot.answer_callback_query(call.id)
+
         elif action == "page":
             page = int(data_parts[1])
             logging.info(f"Handling page callback: {page}")
             show_all_words(call.message, page, user_id=user_id)
+            bot.answer_callback_query(call.id)
 
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
