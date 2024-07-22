@@ -26,7 +26,7 @@ MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 bot = telebot.TeleBot(TOKEN, num_threads=10)
 
 # Configure logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 # Handler for the "/start" command
 @bot.message_handler(commands=['start'])
@@ -54,6 +54,8 @@ def show_all_words(message, page=1):
     offset = (page - 1) * limit
     words = get_words_from_db(user_id, limit, offset)
     total_words = get_word_count(user_id)
+    
+    logging.debug(f"show_all_words called with page={page}, user_id={user_id}, limit={limit}, offset={offset}")
     
     if words:
         markup = types.InlineKeyboardMarkup()
@@ -83,6 +85,7 @@ def show_all_words(message, page=1):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.message:
+        logging.debug(f"callback_inline called with data: {call.data}")
         if call.data.startswith("define_"):
             word_to_define = call.data[7:]
             definition = get_definition(word_to_define)
@@ -122,6 +125,8 @@ def callback_inline(call):
 def process_user_input(message):
     chat_id = message.chat.id
     text = message.text.lower()
+
+    logging.debug(f"process_user_input called with text: {text}")
 
     if text.startswith('/translate'):
         word = text.split(' ', 1)[1]

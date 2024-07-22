@@ -24,6 +24,7 @@ def connect_to_db():
 def add_word_to_db(word, user_id):
     conn = connect_to_db()
     cursor = conn.cursor()
+    logging.debug(f"add_word_to_db called with word={word}, user_id={user_id}")
 
     cursor.execute("SELECT user_id FROM Users WHERE user_id = %s", (user_id,))
     existing_user_id = cursor.fetchone()
@@ -52,6 +53,7 @@ def add_word_to_db(word, user_id):
 def delete_word_from_db(word, user_id):
     conn = connect_to_db()
     cursor = conn.cursor()
+    logging.debug(f"delete_word_from_db called with word={word}, user_id={user_id}")
 
     cursor.execute("SELECT word_id FROM Words WHERE word = %s", (word,))
     word_id = cursor.fetchone()
@@ -67,6 +69,7 @@ def delete_word_from_db(word, user_id):
 def get_words_from_db(user_id, limit, offset):
     conn = connect_to_db()
     cursor = conn.cursor()
+    logging.debug(f"get_words_from_db called with user_id={user_id}, limit={limit}, offset={offset}")
 
     cursor.execute("""
     SELECT w.word FROM Words w
@@ -85,6 +88,7 @@ def get_words_from_db(user_id, limit, offset):
 def get_word_count(user_id):
     conn = connect_to_db()
     cursor = conn.cursor()
+    logging.debug(f"get_word_count called with user_id={user_id}")
 
     cursor.execute("""
     SELECT COUNT(*) FROM UserWords uw
