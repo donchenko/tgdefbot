@@ -9,6 +9,7 @@ import logging
 import os
 from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db
 from src.utilities import log_request, get_definition, format_text, get_translation
+from src.audio_handler import send_audio_file
 
 # Init Database
 import src.db_init
@@ -102,6 +103,11 @@ def callback_inline(call):
             markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
             markup.add(types.InlineKeyboardButton("Delete Word", callback_data=f"delete_{word_to_define}_{user_id}"))
             send_message_in_parts(call.message.chat.id, definition, word_to_define, markup)
+            
+            # Extract audio link from definition
+            audio_link = definition.split("Audio: ")[-1].split("\n")[0]
+            send_audio_file(bot, call.message.chat.id, word_to_define, audio_link)
+
             bot.answer_callback_query(call.id)  # Add this line to handle the callback
 
         elif action == "delete":

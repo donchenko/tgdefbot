@@ -1,6 +1,6 @@
 import os
 import psycopg2
-from psycopg2 import OperationalError
+from psycopg2 import OperationalError, sql
 from dotenv import load_dotenv
 import logging
 
@@ -16,10 +16,25 @@ def connect_to_db():
             port=os.getenv("DB_PORT")
         )
         logging.info("Connected to database successfully")
+        apply_migrations(conn)  # Apply migrations after connecting to the database
         return conn
     except OperationalError as e:
         logging.error(f"The error '{e}' occurred")
         return None
+
+def apply_migrations(conn):
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name='words' AND column_name='audio_path';
+    """)
+    column_exists = cursor.fetchone()
+    if not column_exists:
+        logging.info("Applying migration: adding audio_path column to words table")
+        cursor.execute("ALTER TABLE words ADD COLUMN audio_path VARCHAR(255);")
+        conn.commit()
+    cursor.close()
 
 def add_word_to_db(word, user_id):
     conn = connect_to_db()
@@ -103,3 +118,27 @@ def get_word_count(user_id):
     cursor.close()
     conn.close()
     return count
+
+def update_audio_link(word, audio_path):
+    conn = connect_to_db()
+    cursor = conn.cursor()
+    logging.info(f"update_audio_link called with word={word}, audio_path={audio_path}")
+
+    cursor.execute("UPDATE Words SET audio_path = %s WHERE word = %s", (audio_path, word))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def get_audio_path(word):
+    conn = connect_to_db()
+    cursor = conn.cursor()
+    logging.info(f"get_audio_path called with word={word}")
+
+    cursor.execute("SELECT audio_path FROM Words WHERE word = %s", (word,))
+    audio_path = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if audio_path:
+        return audio_path[0]
+    return None
