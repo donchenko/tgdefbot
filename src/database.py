@@ -15,7 +15,7 @@ def connect_to_db():
             host=os.getenv("DB_HOST"),
             port=os.getenv("DB_PORT")
         )
-        logging.debug("Connected to database successfully")
+        logging.info("Connected to database successfully")
         return conn
     except OperationalError as e:
         logging.error(f"The error '{e}' occurred")
@@ -24,14 +24,14 @@ def connect_to_db():
 def add_word_to_db(word, user_id):
     conn = connect_to_db()
     cursor = conn.cursor()
-    logging.debug(f"add_word_to_db called with word={word}, user_id={user_id}")
+    logging.info(f"add_word_to_db called with word={word}, user_id={user_id}")
 
     cursor.execute("SELECT user_id FROM Users WHERE user_id = %s", (user_id,))
     existing_user_id = cursor.fetchone()
     
     if existing_user_id is None:
         cursor.execute("INSERT INTO Users (user_id) VALUES (%s)", (user_id,))
-        logging.debug(f"Added new user: {user_id}")
+        logging.info(f"Added new user: {user_id}")
 
     cursor.execute("SELECT word_id FROM Words WHERE word = %s", (word,))
     word_id = cursor.fetchone()
@@ -39,12 +39,12 @@ def add_word_to_db(word, user_id):
     if word_id is None:
         cursor.execute("INSERT INTO Words (word) VALUES (%s) RETURNING word_id", (word,))
         word_id = cursor.fetchone()[0]
-        logging.debug(f"Added new word: {word} with id: {word_id}")
+        logging.info(f"Added new word: {word} with id: {word_id}")
     else:
         word_id = word_id[0]
 
     cursor.execute("INSERT INTO UserWords (user_id, word_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (user_id, word_id))
-    logging.debug(f"Linked user {user_id} with word {word} (id: {word_id})")
+    logging.info(f"Linked user {user_id} with word {word} (id: {word_id})")
 
     conn.commit()
     cursor.close()
@@ -53,14 +53,14 @@ def add_word_to_db(word, user_id):
 def delete_word_from_db(word, user_id):
     conn = connect_to_db()
     cursor = conn.cursor()
-    logging.debug(f"delete_word_from_db called with word={word}, user_id={user_id}")
+    logging.info(f"delete_word_from_db called with word={word}, user_id={user_id}")
 
     cursor.execute("SELECT word_id FROM Words WHERE word = %s", (word,))
     word_id = cursor.fetchone()
     if word_id:
         word_id = word_id[0]
         cursor.execute("DELETE FROM UserWords WHERE user_id = %s AND word_id = %s", (user_id, word_id))
-        logging.debug(f"Deleted word {word} (id: {word_id}) for user {user_id}")
+        logging.info(f"Deleted word {word} (id: {word_id}) for user {user_id}")
 
     conn.commit()
     cursor.close()
@@ -69,7 +69,7 @@ def delete_word_from_db(word, user_id):
 def get_words_from_db(user_id, limit, offset):
     conn = connect_to_db()
     cursor = conn.cursor()
-    logging.debug(f"get_words_from_db called with user_id={user_id}, limit={limit}, offset={offset}")
+    logging.info(f"get_words_from_db called with user_id={user_id}, limit={limit}, offset={offset}")
 
     cursor.execute("""
     SELECT w.word FROM Words w
@@ -80,7 +80,7 @@ def get_words_from_db(user_id, limit, offset):
     """, (user_id, limit, offset))
     
     words = cursor.fetchall()
-    logging.debug(f"Fetched words for user {user_id}: {words}")
+    logging.info(f"Fetched words for user {user_id}: {words}")
     cursor.close()
     conn.close()
     return [word[0] for word in words]
@@ -88,7 +88,7 @@ def get_words_from_db(user_id, limit, offset):
 def get_word_count(user_id):
     conn = connect_to_db()
     cursor = conn.cursor()
-    logging.debug(f"get_word_count called with user_id={user_id}")
+    logging.info(f"get_word_count called with user_id={user_id}")
 
     cursor.execute("""
     SELECT COUNT(*) FROM UserWords uw
@@ -96,7 +96,7 @@ def get_word_count(user_id):
     """, (user_id,))
     
     count = cursor.fetchone()[0]
-    logging.debug(f"Word count for user {user_id}: {count}")
+    logging.info(f"Word count for user {user_id}: {count}")
     cursor.close()
     conn.close()
     return count

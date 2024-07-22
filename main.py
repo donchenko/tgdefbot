@@ -26,7 +26,7 @@ MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 bot = telebot.TeleBot(TOKEN, num_threads=10)
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.info)
 
 # Handler for the "/start" command
 @bot.message_handler(commands=['start'])
@@ -55,11 +55,11 @@ def show_all_words(message, page=1):
     words = get_words_from_db(user_id, limit, offset)
     total_words = get_word_count(user_id)
     
-    logging.debug(f"show_all_words called with page={page}, user_id={user_id}, limit={limit}, offset={offset}")
+    logging.info(f"show_all_words called with page={page}, user_id={user_id}, limit={limit}, offset={offset}")
     
     if words:
         markup = types.InlineKeyboardMarkup()
-        logging.debug(f"Fetched words for page {page}: {words}")
+        logging.info(f"Fetched words for page {page}: {words}")
 
         # Show words for the current page
         for word in words:
@@ -70,26 +70,26 @@ def show_all_words(message, page=1):
         if page > 1:
             prev_callback_data = f"page_{page-1}"
             markup.add(types.InlineKeyboardButton("<< Prev", callback_data=prev_callback_data))
-            logging.debug(f"Added Prev button with callback_data: {prev_callback_data}")
+            logging.info(f"Added Prev button with callback_data: {prev_callback_data}")
         
         if total_words > page * limit:
             next_callback_data = f"page_{page+1}"
             markup.add(types.InlineKeyboardButton("Next >>", callback_data=next_callback_data))
-            logging.debug(f"Added Next button with callback_data: {next_callback_data}")
+            logging.info(f"Added Next button with callback_data: {next_callback_data}")
 
         bot.send_message(message.chat.id, "Your words:", reply_markup=markup)
     else:
-        logging.debug(f"No words found for user {user_id} on page {page}")
+        logging.info(f"No words found for user {user_id} on page {page}")
         bot.send_message(message.chat.id, "Your dictionary is empty.")
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.message:
-        logging.debug(f"callback_inline called with data: {call.data}")
+        logging.info(f"callback_inline called with data: {call.data}")
         if call.data.startswith("define_"):
             word_to_define = call.data[7:]
             definition = get_definition(word_to_define)
-            logging.debug(f"Definition for {word_to_define}: {definition}")
+            logging.info(f"Definition for {word_to_define}: {definition}")
 
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("Dictionary", callback_data="showwords"))
@@ -101,23 +101,23 @@ def callback_inline(call):
             user_id = call.message.chat.id
             delete_word_from_db(word_to_delete, user_id)
             bot.answer_callback_query(call.id, "Word deleted from your dictionary.")
-            logging.debug(f"Deleted word: {word_to_delete}")
+            logging.info(f"Deleted word: {word_to_delete}")
         
         elif call.data.startswith("add_"):
             word_to_add = call.data[4:]
             user_id = call.message.chat.id
             add_word_to_db(word_to_add, user_id)
             bot.answer_callback_query(call.id, "Word added to your dictionary.")
-            logging.debug(f"Added word: {word_to_add}")
+            logging.info(f"Added word: {word_to_add}")
 
         elif call.data == "showwords":
             user_id = call.message.chat.id
-            logging.debug(f"Showing words for user: {user_id}")
+            logging.info(f"Showing words for user: {user_id}")
             show_all_words(call.message, page=1)
         
         elif call.data.startswith("page_"):
             page = int(call.data.split("_")[1])
-            logging.debug(f"Handling page callback: {page}")
+            logging.info(f"Handling page callback: {page}")
             show_all_words(call.message, page)
 
 # Handler for processing user input
@@ -126,7 +126,7 @@ def process_user_input(message):
     chat_id = message.chat.id
     text = message.text.lower()
 
-    logging.debug(f"process_user_input called with text: {text}")
+    logging.info(f"process_user_input called with text: {text}")
 
     if text.startswith('/translate'):
         word = text.split(' ', 1)[1]
