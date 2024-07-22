@@ -57,7 +57,7 @@ def show_all_words(message, page=1):
     
     if words:
         markup = types.InlineKeyboardMarkup()
-        logging.debug(f"Fetched words: {words}")
+        logging.debug(f"Fetched words for page {page}: {words}")
 
         # Show words for the current page
         for word in words:
@@ -77,6 +77,7 @@ def show_all_words(message, page=1):
 
         bot.send_message(message.chat.id, "Your words:", reply_markup=markup)
     else:
+        logging.debug(f"No words found for user {user_id} on page {page}")
         bot.send_message(message.chat.id, "Your dictionary is empty.")
 
 @bot.callback_query_handler(func=lambda call: True)
