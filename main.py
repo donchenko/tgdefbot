@@ -48,8 +48,9 @@ def send_help(message):
     bot.reply_to(message, help_message)
 
 @bot.message_handler(commands=['showwords'])
-def show_all_words(message, page=1):
-    user_id = message.from_user.id
+def show_all_words(message, page=1, user_id=None):
+    if user_id is None:
+        user_id = message.from_user.id
     limit = 5
     offset = (page - 1) * limit
     words = get_words_from_db(user_id, limit, offset)
