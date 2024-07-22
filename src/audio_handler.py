@@ -17,10 +17,14 @@ def download_audio_file(url, word):
                 f.write(chunk)
     return local_filename
 
-def send_audio_file(bot, chat_id, word, url):
+def get_audio_file(word, url):
     audio_path = get_audio_path(word)
     if not audio_path or not os.path.exists(audio_path):
         logging.info(f"Downloading audio file for word: {word}")
         audio_path = download_audio_file(url, word)
         update_audio_link(word, audio_path)
+    return audio_path
+
+def send_audio_file(bot, chat_id, word, url):
+    audio_path = get_audio_file(word, url)
     bot.send_audio(chat_id, open(audio_path, 'rb'))
