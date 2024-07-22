@@ -63,8 +63,8 @@ def show_all_words(message, page=1):
         for word in words:
             btn = types.InlineKeyboardButton(word, callback_data=f"define_{word}")
             markup.add(btn)
-        
-        # Add navigation buttons
+
+        # Pagination buttons
         if page > 1:
             prev_callback_data = f"page_{page-1}"
             markup.add(types.InlineKeyboardButton("<< Prev", callback_data=prev_callback_data))
@@ -74,11 +74,10 @@ def show_all_words(message, page=1):
             next_callback_data = f"page_{page+1}"
             markup.add(types.InlineKeyboardButton("Next >>", callback_data=next_callback_data))
             logging.debug(f"Added Next button with callback_data: {next_callback_data}")
-        
-        bot.send_message(message.chat.id, "Your dictionary:", reply_markup=markup)
+
+        bot.send_message(message.chat.id, "Your words:", reply_markup=markup)
     else:
         bot.send_message(message.chat.id, "Your dictionary is empty.")
-
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
@@ -106,13 +105,12 @@ def callback_inline(call):
 
         elif call.data == "showwords":
             user_id = call.message.chat.id
-            show_all_words(call.message)
-
+            show_all_words(call.message, page=1)
+        
         elif call.data.startswith("page_"):
             page = int(call.data.split("_")[1])
             logging.debug(f"Handling page callback: {page}")
             show_all_words(call.message, page)
-
 
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
@@ -155,4 +153,4 @@ def send_message_in_parts(chat_id, text, word, markup=None, max_length=3800):
 if __name__ == "__main__":
     local_dictionary = {}
     logging.info("Starting the bot...")
-    bot.polling()
+    bot.polling &#8203;:citation[oaicite:0]{index=0}&#8203;
