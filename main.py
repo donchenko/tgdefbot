@@ -8,8 +8,8 @@ from bs4 import BeautifulSoup
 import logging
 import os
 from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db
-from src.utilities import log_request, get_definition, format_text
-from src.audio_handler import get_audio_file
+from src.utilities import log_request, get_definition, format_text, get_translation
+from src.audio_handler import send_audio_file
 
 # Init Database
 import src.db_init
@@ -61,48 +61,89 @@ def show_all_words(message, page=1, user_id=None):
     
     if words:
         markup = types.InlineKeyboardMarkup()
-        logging.info(f"Fetched words: {words}")
+        logging.info(f"Fetched words for page {page}: {words}")
+
+        # Show words for the current page
         for word in words:
-            btn = types.InlineKeyboardButton(word, callback_data=f"define_{word[0]}")
+            btn = types.InlineKeyboardButton(word, callback_data=f"define_{word}_{user_id}")
             markup.add(btn)
-        
-        prev_button = types.InlineKeyboardButton("Previous", callback_data=f"showwords_{page-1}")
-        next_button = types.InlineKeyboardButton("Next", callback_data=f"showwords_{page+1}")
-        
+
+        # Pagination buttons
         if page > 1:
-            markup.add(prev_button)
-        if total_words > offset + limit:
-            markup.add(next_button)
+            prev_callback_data = f"page_{page-1}_{user_id}"
+            markup.add(types.InlineKeyboardButton("<< Prev", callback_data=prev_callback_data))
+            logging.info(f"Added Prev button with callback_data: {prev_callback_data}")
         
-        bot.send_message(message.chat.id, "Here are the words in your dictionary:", reply_markup=markup)
+        if total_words > page * limit:
+            next_callback_data = f"page_{page+1}_{user_id}"
+            markup.add(types.InlineKeyboardButton("Next >>", callback_data=next_callback_data))
+            logging.info(f"Added Next button with callback_data: {next_callback_data}")
+
+        bot.send_message(message.chat.id, "Your words:", reply_markup=markup)
     else:
-        bot.send_message(message.chat.id, "No words found in your dictionary.")
+        logging.info(f"No words found for user {user_id} on page {page}")
+        bot.send_message(message.chat.id, "Your dictionary is empty.")
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('define_'))
+@bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
-    word_to_define = call.data.split('_')[1]
-    definition = get_definition(word_to_define)
-    audio_path = get_audio_file(word_to_define)
-    markup = types.InlineKeyboardMarkup()
-    btn = types.InlineKeyboardButton("Add to Dictionary", callback_data=f"add_{word_to_define}_{call.from_user.id}")
-    markup.add(btn)
-    send_message_in_parts(call.message.chat.id, definition, word_to_define, audio_path, markup)
+    if call.message:
+        logging.info(f"callback_inline called with data: {call.data}")
+        data_parts = call.data.split("_")
+        action = data_parts[0]
+        user_id = int(data_parts[-1])  # Get the last part as user_id
+        
+        logging.info(f"Action: {action}, User ID: {user_id}")
+        
+        if action == "define":
+            word_to_define = "_".join(data_parts[1:-1])  # Join all parts except the action and user_id
+            definition = get_definition(word_to_define)
+            logging.info(f"Definition for {word_to_define}: {definition}")
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('add_'))
-def callback_inline_add(call):
-    data = call.data.split('_')
-    word_to_add = data[1]
-    user_id = data[2]
-    add_word_to_db(user_id, word_to_add)
-    bot.send_message(call.message.chat.id, f"The word '{word_to_add}' has been added to your dictionary.")
+            markup = types.InlineKeyboardMarkup()
+            markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
+            markup.add(types.InlineKeyboardButton("Delete Word", callback_data=f"delete_{word_to_define}_{user_id}"))
+            send_message_in_parts(call.message.chat.id, definition, word_to_define, markup)
+            
+            # Extract audio link from definition
+            audio_link = definition.split("Audio: ")[-1].split("\n")[0]
+            send_audio_file(bot, call.message.chat.id, word_to_define, audio_link)
 
+            bot.answer_callback_query(call.id)  # Add this line to handle the callback
+
+        elif action == "delete":
+            word_to_delete = "_".join(data_parts[1:-1])  # Join all parts except the action and user_id
+            delete_word_from_db(word_to_delete, user_id)
+            bot.answer_callback_query(call.id, "Word deleted from your dictionary.")
+            logging.info(f"Deleted word: {word_to_delete}")
+
+        elif action == "add":
+            word_to_add = "_".join(data_parts[1:-1])  # Join all parts except the action and user_id
+            add_word_to_db(word_to_add, user_id)
+            bot.answer_callback_query(call.id, "Word added to your dictionary.")
+            logging.info(f"Added word: {word_to_add}")
+            
+            # Adding "Dictionary" button after word addition
+            markup = types.InlineKeyboardMarkup()
+            markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
+            bot.send_message(call.message.chat.id, "Word added to your dictionary.", reply_markup=markup)
+
+        elif action == "showwords":
+            logging.info(f"Showing words for user: {user_id}")
+            show_all_words(call.message, page=1, user_id=user_id)
+            bot.answer_callback_query(call.id)
+
+        elif action == "page":
+            page = int(data_parts[1])
+            logging.info(f"Handling page callback: {page}")
+            show_all_words(call.message, page, user_id=user_id)
+            bot.answer_callback_query(call.id)
+
+# Handler for processing user input
 @bot.message_handler(func=lambda message: True)
 def process_user_input(message):
-    text = message.text.lower()
     chat_id = message.chat.id
-    user_id = message.from_user.id
+    text = message.text.lower()
 
-    log_request(user_id, text)
     logging.info(f"process_user_input called with text: {text}")
 
     if text.startswith('/translate'):
@@ -127,17 +168,14 @@ def process_user_input(message):
         bot.send_message(chat_id, "Would you like to add this word to your dictionary?", reply_markup=markup)
 
 # Function to send a message in parts to handle long messages
-def send_message_in_parts(chat_id, text, word, audio_path=None, markup=None, max_length=3800):
+def send_message_in_parts(chat_id, text, word, markup=None, max_length=3800):
     text += f"\n\nYou can listen to the pronunciation of the word here: https://youglish.com/pronounce/{word}/english"
     text = format_text(text)
 
     parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
     for part in parts[:-1]:
         bot.send_message(chat_id, part, parse_mode='Markdown')
-    if audio_path:
-        bot.send_audio(chat_id, open(audio_path, 'rb'), caption=parts[-1], parse_mode='Markdown', reply_markup=markup)
-    else:
-        bot.send_message(chat_id, parts[-1], parse_mode='Markdown', reply_markup=markup)
+    bot.send_message(chat_id, parts[-1], parse_mode='Markdown', reply_markup=markup)
 
 # Start the bot
 if __name__ == "__main__":
