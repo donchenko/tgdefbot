@@ -66,18 +66,21 @@ def delete_word_from_db(word, user_id):
     cursor.close()
     conn.close()
 
-def get_words_from_db(user_id, limit, offset):
+def get_words_from_db(user_id, limit, offset, sort=False):
     conn = connect_to_db()
     cursor = conn.cursor()
-    logging.info(f"get_words_from_db called with user_id={user_id}, limit={limit}, offset={offset}")
+    logging.info(f"get_words_from_db called with user_id={user_id}, limit={limit}, offset={offset}, sort={sort}")
 
-    cursor.execute("""
+    query = """
     SELECT w.word FROM Words w
     INNER JOIN UserWords uw ON w.word_id = uw.word_id
     WHERE uw.user_id = %s
-    ORDER BY w.word
-    LIMIT %s OFFSET %s
-    """, (user_id, limit, offset))
+    """
+    if sort:
+        query += " ORDER BY w.word"
+    query += " LIMIT %s OFFSET %s"
+    
+    cursor.execute(query, (user_id, limit, offset))
     
     words = cursor.fetchall()
     logging.info(f"Fetched words for user {user_id}: {words}")

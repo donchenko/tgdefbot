@@ -53,7 +53,7 @@ def show_all_words(message, page=1, user_id=None):
         user_id = message.from_user.id
     limit = 5
     offset = (page - 1) * limit
-    words = get_words_from_db(user_id, limit, offset)
+    words = get_words_from_db(user_id, limit, offset, sort=True)
     total_words = get_word_count(user_id)
     
     logging.info(f"show_all_words called with page={page}, user_id={user_id}, limit={limit}, offset={offset}")
@@ -115,6 +115,11 @@ def callback_inline(call):
             add_word_to_db(word_to_add, user_id)
             bot.answer_callback_query(call.id, "Word added to your dictionary.")
             logging.info(f"Added word: {word_to_add}")
+            
+            # Adding "Dictionary" button after word addition
+            markup = types.InlineKeyboardMarkup()
+            markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
+            bot.send_message(call.message.chat.id, "Word added to your dictionary.", reply_markup=markup)
 
         elif action == "showwords":
             logging.info(f"Showing words for user: {user_id}")
