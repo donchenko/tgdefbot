@@ -20,7 +20,11 @@ def download_audio_file(url, word):
 def get_audio_file(word, url):
     audio_path = get_audio_path(word)
     if not audio_path or not os.path.exists(audio_path):
-        logging.info(f"Downloading audio file for word: {word}")
-        audio_path = download_audio_file(url, word)
-        update_audio_link(word, audio_path)
+        try:
+            logging.info(f"Downloading audio file for word: {word}")
+            audio_path = download_audio_file(url, word)
+            update_audio_link(word, audio_path)
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Failed to download audio file for word: {word}. Error: {e}")
+            audio_path = None
     return audio_path

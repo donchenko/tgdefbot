@@ -102,9 +102,7 @@ def callback_inline(call):
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
             markup.add(types.InlineKeyboardButton("Delete Word", callback_data=f"delete_{word_to_define}_{user_id}"))
-            
-            # Extract audio link from definition
-            audio_link = definition.split("Audio: ")[-1].split("\n")[0]
+                        
             audio_path = get_audio_file(word_to_define, audio_link)
             
             send_message_in_parts(call.message.chat.id, definition, word_to_define, audio_path, markup)
