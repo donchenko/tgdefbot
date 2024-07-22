@@ -88,10 +88,12 @@ def callback_inline(call):
         logging.info(f"callback_inline called with data: {call.data}")
         data_parts = call.data.split("_")
         action = data_parts[0]
+        user_id = int(data_parts[-1])  # Get the last part as user_id
+        
+        logging.info(f"Action: {action}, User ID: {user_id}")
         
         if action == "define":
-            word_to_define = data_parts[1]
-            user_id = data_parts[2]
+            word_to_define = "_".join(data_parts[1:-1])  # Join all parts except the action and user_id
             definition = get_definition(word_to_define)
             logging.info(f"Definition for {word_to_define}: {definition}")
 
@@ -101,29 +103,25 @@ def callback_inline(call):
             send_message_in_parts(call.message.chat.id, definition, word_to_define, markup)
 
         elif action == "delete":
-            word_to_delete = data_parts[1]
-            user_id = data_parts[2]
+            word_to_delete = "_".join(data_parts[1:-1])  # Join all parts except the action and user_id
             delete_word_from_db(word_to_delete, user_id)
             bot.answer_callback_query(call.id, "Word deleted from your dictionary.")
             logging.info(f"Deleted word: {word_to_delete}")
 
         elif action == "add":
-            word_to_add = data_parts[1]
-            user_id = data_parts[2]
+            word_to_add = "_".join(data_parts[1:-1])  # Join all parts except the action and user_id
             add_word_to_db(word_to_add, user_id)
             bot.answer_callback_query(call.id, "Word added to your dictionary.")
             logging.info(f"Added word: {word_to_add}")
 
         elif action == "showwords":
-            user_id = data_parts[1]
             logging.info(f"Showing words for user: {user_id}")
-            show_all_words(call.message, page=1)
+            show_all_words(call.message, page=1, user_id=user_id)
         
         elif action == "page":
             page = int(data_parts[1])
-            user_id = data_parts[2]
             logging.info(f"Handling page callback: {page}")
-            show_all_words(call.message, page)
+            show_all_words(call.message, page, user_id=user_id)
 
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
