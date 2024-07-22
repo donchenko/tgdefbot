@@ -102,6 +102,7 @@ def callback_inline(call):
             markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
             markup.add(types.InlineKeyboardButton("Delete Word", callback_data=f"delete_{word_to_define}_{user_id}"))
             send_message_in_parts(call.message.chat.id, definition, word_to_define, markup)
+            bot.answer_callback_query(call.id)  # Add this line to handle the callback
 
         elif action == "delete":
             word_to_delete = "_".join(data_parts[1:-1])  # Join all parts except the action and user_id
