@@ -85,6 +85,7 @@ def callback_inline(call):
         if call.data.startswith("define_"):
             word_to_define = call.data[7:]
             definition = get_definition(word_to_define)
+            logging.debug(f"Definition for {word_to_define}: {definition}")
 
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("Dictionary", callback_data="showwords"))
@@ -96,15 +97,18 @@ def callback_inline(call):
             user_id = call.message.chat.id
             delete_word_from_db(word_to_delete, user_id)
             bot.answer_callback_query(call.id, "Word deleted from your dictionary.")
+            logging.debug(f"Deleted word: {word_to_delete}")
         
         elif call.data.startswith("add_"):
             word_to_add = call.data[4:]
             user_id = call.message.chat.id
             add_word_to_db(word_to_add, user_id)
             bot.answer_callback_query(call.id, "Word added to your dictionary.")
+            logging.debug(f"Added word: {word_to_add}")
 
         elif call.data == "showwords":
             user_id = call.message.chat.id
+            logging.debug(f"Showing words for user: {user_id}")
             show_all_words(call.message, page=1)
         
         elif call.data.startswith("page_"):
