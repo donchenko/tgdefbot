@@ -153,4 +153,4 @@ def send_message_in_parts(chat_id, text, word, markup=None, max_length=3800):
 if __name__ == "__main__":
     local_dictionary = {}
     logging.info("Starting the bot...")
-    bot.polling &#8203;:citation[oaicite:0]{index=0}&#8203;
+    bot.polling()
