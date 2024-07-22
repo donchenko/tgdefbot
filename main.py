@@ -26,7 +26,7 @@ MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 bot = telebot.TeleBot(TOKEN, num_threads=10)
 
 # Configure logging
-logging.basicConfig(level=logging.info)
+logging.basicConfig(level=logging.INFO)
 
 # Handler for the "/start" command
 @bot.message_handler(commands=['start'])
@@ -63,17 +63,17 @@ def show_all_words(message, page=1):
 
         # Show words for the current page
         for word in words:
-            btn = types.InlineKeyboardButton(word, callback_data=f"define_{word}")
+            btn = types.InlineKeyboardButton(word, callback_data=f"define_{word}_{user_id}")
             markup.add(btn)
 
         # Pagination buttons
         if page > 1:
-            prev_callback_data = f"page_{page-1}"
+            prev_callback_data = f"page_{page-1}_{user_id}"
             markup.add(types.InlineKeyboardButton("<< Prev", callback_data=prev_callback_data))
             logging.info(f"Added Prev button with callback_data: {prev_callback_data}")
         
         if total_words > page * limit:
-            next_callback_data = f"page_{page+1}"
+            next_callback_data = f"page_{page+1}_{user_id}"
             markup.add(types.InlineKeyboardButton("Next >>", callback_data=next_callback_data))
             logging.info(f"Added Next button with callback_data: {next_callback_data}")
 
@@ -86,37 +86,42 @@ def show_all_words(message, page=1):
 def callback_inline(call):
     if call.message:
         logging.info(f"callback_inline called with data: {call.data}")
-        if call.data.startswith("define_"):
-            word_to_define = call.data[7:]
+        data_parts = call.data.split("_")
+        action = data_parts[0]
+        
+        if action == "define":
+            word_to_define = data_parts[1]
+            user_id = data_parts[2]
             definition = get_definition(word_to_define)
             logging.info(f"Definition for {word_to_define}: {definition}")
 
             markup = types.InlineKeyboardMarkup()
-            markup.add(types.InlineKeyboardButton("Dictionary", callback_data="showwords"))
-            markup.add(types.InlineKeyboardButton("Delete Word", callback_data=f"delete_{word_to_define}"))
+            markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
+            markup.add(types.InlineKeyboardButton("Delete Word", callback_data=f"delete_{word_to_define}_{user_id}"))
             send_message_in_parts(call.message.chat.id, definition, word_to_define, markup)
 
-        elif call.data.startswith("delete_"):
-            word_to_delete = call.data[7:]
-            user_id = call.message.chat.id
+        elif action == "delete":
+            word_to_delete = data_parts[1]
+            user_id = data_parts[2]
             delete_word_from_db(word_to_delete, user_id)
             bot.answer_callback_query(call.id, "Word deleted from your dictionary.")
             logging.info(f"Deleted word: {word_to_delete}")
-        
-        elif call.data.startswith("add_"):
-            word_to_add = call.data[4:]
-            user_id = call.message.chat.id
+
+        elif action == "add":
+            word_to_add = data_parts[1]
+            user_id = data_parts[2]
             add_word_to_db(word_to_add, user_id)
             bot.answer_callback_query(call.id, "Word added to your dictionary.")
             logging.info(f"Added word: {word_to_add}")
 
-        elif call.data == "showwords":
-            user_id = call.message.chat.id
+        elif action == "showwords":
+            user_id = data_parts[1]
             logging.info(f"Showing words for user: {user_id}")
             show_all_words(call.message, page=1)
         
-        elif call.data.startswith("page_"):
-            page = int(call.data.split("_")[1])
+        elif action == "page":
+            page = int(data_parts[1])
+            user_id = data_parts[2]
             logging.info(f"Handling page callback: {page}")
             show_all_words(call.message, page)
 
@@ -145,7 +150,7 @@ def process_user_input(message):
         definition = get_definition(text)
         send_message_in_parts(chat_id, definition, text)
         markup = types.InlineKeyboardMarkup()
-        btn = types.InlineKeyboardButton("Add to Dictionary", callback_data=f"add_{text}")
+        btn = types.InlineKeyboardButton("Add to Dictionary", callback_data=f"add_{text}_{message.from_user.id}")
         markup.add(btn)
         bot.send_message(chat_id, "Would you like to add this word to your dictionary?", reply_markup=markup)
 
