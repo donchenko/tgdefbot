@@ -108,7 +108,6 @@ def callback_inline(call):
             audio_path = get_audio_file(word_to_define, audio_link)
             
             send_message_in_parts(call.message.chat.id, definition, word_to_define, audio_path, markup)
-
             bot.answer_callback_query(call.id)  # Add this line to handle the callback
 
         elif action == "delete":
