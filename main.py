@@ -169,17 +169,21 @@ def process_user_input(message):
         bot.send_message(chat_id, "Would you like to add this word to your dictionary?", reply_markup=markup)
 
 # Function to send a message in parts to handle long messages
-def send_message_in_parts(chat_id, text, word, audio_path=None, markup=None, max_length=3800):
-    text += f"\n\nYou can listen to the pronunciation of the word here: https://youglish.com/pronounce/{word}/english"
-    text = format_text(text)
-
-    parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
-    for part in parts[:-1]:
+def send_message_in_parts(chat_id, text, word_to_define, audio_path, markup=None, max_length=1024):
+    # Разбить текст на части длиной не более max_length
+    parts = [text[i:i+max_length] for i in range(0, len(text), max_length)]
+    
+    # Отправить первую часть вместе с аудио
+    if parts:
+        bot.send_audio(chat_id, open(audio_path, 'rb'), caption=parts[0], parse_mode='Markdown', reply_markup=markup)
+    
+    # Отправить остальные части
+    for part in parts[1:]:
         bot.send_message(chat_id, part, parse_mode='Markdown')
-    if audio_path:
-        bot.send_audio(chat_id, open(audio_path, 'rb'), caption=parts[-1], parse_mode='Markdown', reply_markup=markup)
-    else:
-        bot.send_message(chat_id, parts[-1], parse_mode='Markdown', reply_markup=markup)
+
+# Обновление вызова функции в вашем основном коде
+send_message_in_parts(call.message.chat.id, definition, word_to_define, audio_path, markup)
+
 
 # Start the bot
 if __name__ == "__main__":
