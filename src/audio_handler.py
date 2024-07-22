@@ -24,7 +24,3 @@ def get_audio_file(word, url):
         audio_path = download_audio_file(url, word)
         update_audio_link(word, audio_path)
     return audio_path
-
-def send_audio_file(bot, chat_id, word, url):
-    audio_path = get_audio_file(word, url)
-    bot.send_audio(chat_id, open(audio_path, 'rb'))

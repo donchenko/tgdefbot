@@ -8,8 +8,8 @@ from bs4 import BeautifulSoup
 import logging
 import os
 from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db
-from src.utilities import log_request, get_definition, format_text, get_translation
-from src.audio_handler import send_audio_file, get_audio_file
+from src.utilities import log_request, get_definition, format_text
+from src.audio_handler import get_audio_file
 
 # Init Database
 import src.db_init
@@ -107,7 +107,7 @@ def callback_inline(call):
             audio_link = definition.split("Audio: ")[-1].split("\n")[0]
             audio_path = get_audio_file(word_to_define, audio_link)
             
-            send_definition_with_audio(call.message.chat.id, definition, word_to_define, audio_path, markup)
+            send_message_in_parts(call.message.chat.id, definition, word_to_define, audio_path, markup)
 
             bot.answer_callback_query(call.id)  # Add this line to handle the callback
 
@@ -169,20 +169,17 @@ def process_user_input(message):
         bot.send_message(chat_id, "Would you like to add this word to your dictionary?", reply_markup=markup)
 
 # Function to send a message in parts to handle long messages
-def send_message_in_parts(chat_id, text, word, markup=None, max_length=3800):
+def send_message_in_parts(chat_id, text, word, audio_path=None, markup=None, max_length=3800):
     text += f"\n\nYou can listen to the pronunciation of the word here: https://youglish.com/pronounce/{word}/english"
     text = format_text(text)
 
     parts = [text[i:i + max_length] for i in range(0, len(text), max_length)]
     for part in parts[:-1]:
         bot.send_message(chat_id, part, parse_mode='Markdown')
-    bot.send_message(chat_id, parts[-1], parse_mode='Markdown', reply_markup=markup)
-
-# Function to send a message with audio attached
-def send_definition_with_audio(chat_id, definition, word, audio_path, markup=None):
-    definition_text = definition.split("\n\nPronunciations:\nAudio: ")[0]  # Remove audio link information
-    definition_text = format_text(definition_text)
-    bot.send_audio(chat_id, open(audio_path, 'rb'), caption=definition_text, parse_mode='Markdown', reply_markup=markup)
+    if audio_path:
+        bot.send_audio(chat_id, open(audio_path, 'rb'), caption=parts[-1], parse_mode='Markdown', reply_markup=markup)
+    else:
+        bot.send_message(chat_id, parts[-1], parse_mode='Markdown', reply_markup=markup)
 
 # Start the bot
 if __name__ == "__main__":
