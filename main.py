@@ -26,7 +26,7 @@ MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 bot = telebot.TeleBot(TOKEN, num_threads=10)
 
 # Configure logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 # Handler for the "/start" command
 @bot.message_handler(commands=['start'])
