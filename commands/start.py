@@ -20,6 +20,4 @@ Each word in your dictionary comes with options to see its definition again or r
 We're constantly working on expanding the bot's functionality to enhance your learning experience!
 
 Let's begin exploring new words together! 🚀
-
-Need help? Just type /help for more information.
     """
