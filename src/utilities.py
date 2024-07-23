@@ -35,8 +35,7 @@ def get_definition(word):
                 result += f"- {definition}\n"
         if entry.get('art') and entry['art'].get('artid'):
             result += f"\nIllustration: {entry['art']['artid']}\n"
-        if entry.get('hwi') and entry['hwi'].get('prs'):
-            result += "\nPronunciations:\n"
+        if entry.get('hwi') and entry['hwi'].get('prs'):            
             for pr in entry['hwi']['prs']:
                 if pr.get('mw'):
                     result += f"- {pr['mw']}\n"
