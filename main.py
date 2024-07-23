@@ -10,6 +10,7 @@ import os
 from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db
 from src.utilities import log_request, get_definition, format_text
 from src.audio_handler import get_audio_file
+from commands.start import get_welcome_message
 
 # Init Database
 import src.db_init
@@ -32,7 +33,7 @@ logging.basicConfig(level=logging.INFO)
 # Handler for the "/start" command
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Welcome to the English learning bot!")
+    bot.reply_to(message, get_welcome_message())
 
 # Handler for the "/help" command
 @bot.message_handler(commands=['help'])

@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt --target=/app
 
 # Copy the rest of the code.
 COPY src/ /app/src/
+COPY commands/ /app/commands/
 COPY main.py /app/
 COPY test_bot.py /app/
 
