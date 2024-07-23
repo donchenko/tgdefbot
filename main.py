@@ -176,7 +176,15 @@ def send_message_in_parts(chat_id, text, word, audio_path=None, markup=None, max
     for part in parts[:-1]:
         bot.send_message(chat_id, part, parse_mode='Markdown')
     if audio_path:
-        bot.send_audio(chat_id, open(audio_path, 'rb'), caption=parts[-1], parse_mode='Markdown', reply_markup=markup)
+        # If the last part exceeds the limit, we split it further
+        last_part = parts[-1]
+        if len(last_part) > max_length:
+            remaining_parts = [last_part[i:i + max_length] for i in range(0, len(last_part), max_length)]
+            for remaining_part in remaining_parts[:-1]:
+                bot.send_message(chat_id, remaining_part, parse_mode='Markdown')
+            bot.send_audio(chat_id, open(audio_path, 'rb'), caption=remaining_parts[-1][:1024], parse_mode='Markdown', reply_markup=markup)
+        else:
+            bot.send_audio(chat_id, open(audio_path, 'rb'), caption=last_part[:1024], parse_mode='Markdown', reply_markup=markup)
     else:
         bot.send_message(chat_id, parts[-1], parse_mode='Markdown', reply_markup=markup)
 
