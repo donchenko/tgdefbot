@@ -1,5 +1,3 @@
-# utilities.py
-
 import requests
 import logging
 from dotenv import load_dotenv
@@ -19,13 +17,14 @@ def get_definition(word):
         log_request("definition", word)
     except requests.exceptions.RequestException as e:
         log_request("definition", word, success=False, error_message=str(e))
-        return "No definition found due to an error."
+        return "No definition found due to an error.", None
 
     data = response.json()
     if not data:
-        return "No definition found."
+        return "No definition found.", None
 
     result = ""
+    audio_link = None
     for entry in data:
         # Using get() method to avoid KeyError
         if entry.get('fl'):
@@ -42,7 +41,7 @@ def get_definition(word):
                 if pr.get('mw'):
                     result += f"- {pr['mw']}\n"
                 if pr.get('sound') and pr['sound'].get('audio'):
-                    result += f"Audio: https://media.merriam-webster.com/soundc11/{word[0]}/{pr['sound']['audio']}.wav\n"
+                    audio_link = f"https://media.merriam-webster.com/soundc11/{word[0]}/{pr['sound']['audio']}.wav"
         if entry.get('def'):
             result += "\nUsage Examples:\n"
             for def_item in entry['def']:
@@ -55,9 +54,7 @@ def get_definition(word):
                                         for vis_item in dt_item[1]:
                                             if isinstance(vis_item, dict) and vis_item.get('t'):
                                                 result += f"- {vis_item['t']}\n"
-    return result
-
-
+    return result, audio_link
 
 # Function for formatting text from dictionary to telegram
 def format_text(text):

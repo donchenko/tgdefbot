@@ -96,16 +96,17 @@ def callback_inline(call):
         
         if action == "define":
             word_to_define = "_".join(data_parts[1:-1])  # Join all parts except the action and user_id
-            definition = get_definition(word_to_define)
+            definition, audio_link = get_definition(word_to_define)
             logging.info(f"Definition for {word_to_define}: {definition}")
 
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
             markup.add(types.InlineKeyboardButton("Delete Word", callback_data=f"delete_{word_to_define}_{user_id}"))
             
-            # Extract audio link from definition
-            audio_link = definition.split("Audio: ")[-1].split("\n")[0]
-            audio_path = get_audio_file(word_to_define, audio_link)
+            # Get audio file if audio link is present
+            audio_path = None
+            if audio_link:
+                audio_path = get_audio_file(word_to_define, audio_link)
             
             send_message_in_parts(call.message.chat.id, definition, word_to_define, audio_path, markup)
             bot.answer_callback_query(call.id)  # Add this line to handle the callback
@@ -160,7 +161,7 @@ def process_user_input(message):
         send_message_in_parts(chat_id, f"Here's a random word from your local dictionary: {random_word}", random_word)
     
     else:
-        definition = get_definition(text)
+        definition, audio_link = get_definition(text)
         send_message_in_parts(chat_id, definition, text)
         markup = types.InlineKeyboardMarkup()
         btn = types.InlineKeyboardButton("Add to Dictionary", callback_data=f"add_{text}_{message.from_user.id}")
