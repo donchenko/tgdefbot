@@ -13,9 +13,9 @@ def test_send_message():
 
     try:
         bot.send_message(test_chat_id, test_message)
-        logging.info('Test passed')
+        print('Test passed')
     except Exception as e:
-        logging.error('Test failed:', e)
+        print('Test failed:', e)
 
 if __name__ == '__main__':
     test_send_message()
