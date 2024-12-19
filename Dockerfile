@@ -16,5 +16,4 @@ COPY commands/ /app/commands/
 COPY main.py /app/
 COPY test_bot.py /app/
 
-
 CMD ["python", "main.py"]

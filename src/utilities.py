@@ -70,6 +70,7 @@ def format_text(text):
 
 # Function to get translation from English to Russian
 def get_translation(word):
+    logging.info(f"get_translation called with word={word}")
     # Implement translation logic here or use an existing translation API
     return None
 
