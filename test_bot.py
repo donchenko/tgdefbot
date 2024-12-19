@@ -8,7 +8,6 @@ bot = telebot.TeleBot(TOKEN)
 logging.basicConfig(level=logging.INFO)
 
 def test_send_message():
-    # Замените 'test_chat_id' на ID тестового чата или пользователя
     test_chat_id = '59666312'
     test_message = 'This is a test message.'
 
