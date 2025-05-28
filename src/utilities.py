@@ -150,10 +150,9 @@ def format_text(text: str) -> str:
     # The focus is on converting known tags.
     return text.strip()
 
-def get_translation(word: str) -> str | None:
-def get_translation(word: str) -> Optional[str]: # Corrected type hint
+def get_translation(word: str) -> Optional[str]:
     logger.info(f"Translation requested for word='{word}' (Not Implemented)")
-    return None # This line is fine, returns None as per Optional[str]
+    return None
 
 def log_request(request_type: str, identifier: str, success: bool = True, error_message: Optional[str] = None) -> None:
     if success:
