@@ -3,6 +3,7 @@ import logging
 from dotenv import load_dotenv
 import os
 import re # Added for re.sub
+from typing import Tuple, Optional, List, Dict, Any, Union # Added for Python 3.9 compatibility
 
 # Load environment variables from .env file
 load_dotenv()
@@ -12,7 +13,7 @@ MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 # Logger instance for this module.
 # Ensure logger is available. It might be configured in main.py and imported,
 # or this module could be used standalone in scripts.
-if 'logger' not in globals():
+if 'logger' not in globals(): # type: ignore # Mypy/Linter might complain about 'logger' not being defined
     logger = logging.getLogger(__name__)
     if not logger.hasHandlers(): # Avoid adding handlers multiple times
         logging.basicConfig(
@@ -25,7 +26,7 @@ if 'logger' not in globals():
 # This is the get_definition from the last read_files output
 # I am keeping the version of get_definition and other functions as they were in the last read_files output,
 # only modifying format_text and ensuring 'logger' is used.
-def get_definition(word: str) -> tuple[str | None, str | None]:
+def get_definition(word: str) -> Tuple[Optional[str], Optional[str]]:
     """
     Fetches the definition and related information for a given word using the Merriam-Webster Learner's Dictionary API.
     (This version is based on the last `read_files` output, assuming previous refactorings to it were not applied or lost)
@@ -134,7 +135,7 @@ def format_text(text: str) -> str:
     Formats text containing dictionary-specific tags (like {it} for italics, {phrase} for bold)
     into Markdown compatible formatting for Telegram.
     """
-    if not text: return "" 
+    if not text: return "" # type: ignore # Ensure it handles None gracefully if type hint changes
     
     text = text.replace('{it}', '_').replace('{/it}', '_')
     text = text.replace('{phrase}', '*').replace('{/phrase}', '*')
@@ -153,7 +154,7 @@ def get_translation(word: str) -> str | None:
     logger.info(f"Translation requested for word='{word}' (Not Implemented)")
     return None
 
-def log_request(request_type: str, identifier: str, success: bool = True, error_message: str | None = None) -> None:
+def log_request(request_type: str, identifier: str, success: bool = True, error_message: Optional[str] = None) -> None:
     if success:
         logger.info(f"Request Type: [{request_type}], Identifier: [{identifier}], Status: [Successful]")
     else:
