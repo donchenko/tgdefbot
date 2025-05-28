@@ -143,7 +143,7 @@ class MockCallbackQuery:
             self.message.message_id = 1001 
 
 # --- Tests for main.py ---
-@patch('main.logger') 
+# Remove @patch('main.logger') from class level
 @patch('main.bot')    
 class TestMainCommandHandlers(unittest.TestCase):
 
@@ -158,12 +158,17 @@ class TestMainCommandHandlers(unittest.TestCase):
             "DB_PORT": "5432"
         }
 
+    @patch('logging.getLogger') # Patch logging.getLogger for this method
     @patch('main.log_request') 
-    def test_send_help_command(self, mock_main_log_request, mock_main_bot, mock_main_logger):
+    def test_send_help_command(self, mock_main_log_request, mock_get_logger, mock_main_bot):
+        mock_logger_instance = MagicMock()
+        mock_get_logger.return_value = mock_logger_instance
+
         with patch.dict(os.environ, self._get_patched_env(), clear=True):
             import main 
             mock_message_obj = MockMessage(text="/help")
             main.send_help(mock_message_obj)
+        
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_main_bot.reply_to.assert_called_once()
         args, kwargs = mock_main_bot.reply_to.call_args
@@ -172,53 +177,80 @@ class TestMainCommandHandlers(unittest.TestCase):
         self.assertIn("/add [word]", help_text_sent)
         self.assertIn("/showwords", help_text_sent)
         self.assertEqual(kwargs.get('parse_mode'), 'Markdown')
+        mock_logger_instance.info.assert_any_call(f"Sent help message to user {mock_message_obj.from_user.id}")
 
+
+    @patch('logging.getLogger')
     @patch('main.add_word_to_db')
     @patch('main.log_request')
-    def test_process_user_input_add_word_success(self, mock_main_log_request, mock_add_db, mock_main_bot, mock_main_logger):
+    def test_process_user_input_add_word_success(self, mock_main_log_request, mock_add_db, mock_get_logger, mock_main_bot):
+        mock_logger_instance = MagicMock()
+        mock_get_logger.return_value = mock_logger_instance
+        
         with patch.dict(os.environ, self._get_patched_env(), clear=True):
             import main
             mock_message_obj = MockMessage(text="/add exampleword")
             main.process_user_input(mock_message_obj)
+
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_add_db.assert_called_once_with("exampleword", mock_message_obj.from_user.id)
         mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Successfully added 'exampleword' to your dictionary!")
+        mock_logger_instance.info.assert_any_call(f"Successfully added 'exampleword' to dictionary for user {mock_message_obj.from_user.id} via command.")
 
+
+    @patch('logging.getLogger')
     @patch('main.log_request')
-    def test_process_user_input_add_word_missing_arg(self, mock_main_log_request, mock_main_bot, mock_main_logger):
+    def test_process_user_input_add_word_missing_arg(self, mock_main_log_request, mock_get_logger, mock_main_bot):
+        mock_logger_instance = MagicMock()
+        mock_get_logger.return_value = mock_logger_instance
+
         with patch.dict(os.environ, self._get_patched_env(), clear=True):
             import main
             mock_message_obj = MockMessage(text="/add ")
             main.process_user_input(mock_message_obj)
+
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_main_bot.reply_to.assert_called_once()
         args, kwargs = mock_main_bot.reply_to.call_args
         self.assertIn("Please provide a word to add. Usage: `/add [word]`", args[1])
+        mock_logger_instance.warning.assert_any_call(f"User {mock_message_obj.from_user.id} sent /add without a word.")
 
+    @patch('logging.getLogger')
     @patch('main.delete_word_from_db')
     @patch('main.get_word_count') 
     @patch('main.log_request')
-    def test_process_user_input_remove_word_success(self, mock_main_log_request, mock_get_count, mock_delete_db, mock_main_bot, mock_main_logger):
+    def test_process_user_input_remove_word_success(self, mock_main_log_request, mock_get_count, mock_delete_db, mock_get_logger, mock_main_bot):
+        mock_logger_instance = MagicMock()
+        mock_get_logger.return_value = mock_logger_instance
+
         with patch.dict(os.environ, self._get_patched_env(), clear=True):
             import main
             mock_message_obj = MockMessage(text="/remove exampleword")
             mock_get_count.side_effect = [5, 4] 
             main.process_user_input(mock_message_obj)
+
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_delete_db.assert_called_once_with("exampleword", mock_message_obj.from_user.id)
         mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Successfully removed 'exampleword' from your dictionary!")
+        mock_logger_instance.info.assert_any_call(f"Successfully removed 'exampleword' from dictionary for user {mock_message_obj.from_user.id} via command.")
 
+
+    @patch('logging.getLogger')
     @patch('main.get_definition')
     @patch('main.get_audio_file')
     @patch('main.send_message_in_parts')
     @patch('main.log_request')
-    def test_process_user_input_define_word_success(self, mock_main_log_request, mock_send_parts, mock_get_audio, mock_get_def, mock_main_bot, mock_main_logger):
+    def test_process_user_input_define_word_success(self, mock_main_log_request, mock_send_parts, mock_get_audio, mock_get_def, mock_get_logger, mock_main_bot):
+        mock_logger_instance = MagicMock()
+        mock_get_logger.return_value = mock_logger_instance
+        
         with patch.dict(os.environ, self._get_patched_env(), clear=True):
             import main
             mock_message_obj = MockMessage(text="erudite")
             mock_get_def.return_value = ("Definition of erudite.", "http://audio.example.com/erudite.wav")
             mock_get_audio.return_value = "/path/to/erudite.wav"
             main.process_user_input(mock_message_obj)
+
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_get_def.assert_called_once_with("erudite")
         mock_get_audio.assert_called_once_with("erudite", "http://audio.example.com/erudite.wav")
@@ -230,18 +262,27 @@ class TestMainCommandHandlers(unittest.TestCase):
             for call_args in mock_main_bot.send_message.call_args_list
         )
         self.assertTrue(found_add_prompt, "Add to dictionary prompt was not sent.")
+        mock_logger_instance.info.assert_any_call(f"Sent definition of 'erudite' and add prompt to user {mock_message_obj.from_user.id}.")
 
+
+    @patch('logging.getLogger')
     @patch('main.get_definition')
     @patch('main.log_request')
-    def test_process_user_input_define_word_not_found(self, mock_main_log_request, mock_get_def, mock_main_bot, mock_main_logger):
+    def test_process_user_input_define_word_not_found(self, mock_main_log_request, mock_get_def, mock_get_logger, mock_main_bot):
+        mock_logger_instance = MagicMock()
+        mock_get_logger.return_value = mock_logger_instance
+
         with patch.dict(os.environ, self._get_patched_env(), clear=True):
             import main
             mock_message_obj = MockMessage(text="nonexistentword")
             mock_get_def.return_value = (None, None) 
             main.process_user_input(mock_message_obj)
+        
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_get_def.assert_called_once_with("nonexistentword")
         mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Sorry, I couldn't find a definition for 'nonexistentword'.")
+        mock_logger_instance.warning.assert_any_call(f"No definition found for 'nonexistentword' (API or processing error) for user {mock_message_obj.from_user.id}.")
+
 
 if __name__ == '__main__':
     unittest.main()

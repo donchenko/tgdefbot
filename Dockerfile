@@ -7,8 +7,8 @@ RUN apt-get update && apt-get install -y libpq-dev libpq5 gcc
 
 COPY requirements.txt .
 
-# Install the dependencies into a directory that we can easily copy in the next stage.
-RUN pip install --no-cache-dir -r requirements.txt --target=/app
+# Install the dependencies.
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the code.
 COPY src/ /app/src/
