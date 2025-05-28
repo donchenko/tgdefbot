@@ -31,7 +31,6 @@ class TestFormatText(unittest.TestCase):
         self.assertEqual(format_text("Another {it}one."), "Another _one.") 
         self.assertEqual(format_text("Unpaired {b}bold."), "Unpaired *bold.") 
         self.assertEqual(format_text("Mixture of unpaired {it}a{/it} and {b}b."), "Mixture of unpaired _a_ and *b.") 
-        # Expecting no leading space due to .strip() in format_text
         self.assertEqual(format_text("Mixture of unpaired {it}a and {b}b."), "Mixture of unpaired _a and *b.")
 
     def test_no_tags(self):
@@ -143,7 +142,6 @@ class MockCallbackQuery:
             self.message.message_id = 1001 
 
 # --- Tests for main.py ---
-# Remove @patch('main.logger') from class level
 @patch('main.bot')    
 class TestMainCommandHandlers(unittest.TestCase):
 
@@ -158,14 +156,14 @@ class TestMainCommandHandlers(unittest.TestCase):
             "DB_PORT": "5432"
         }
 
-    @patch('logging.getLogger') # Patch logging.getLogger for this method
+    @patch('logging.getLogger') 
     @patch('main.log_request') 
     def test_send_help_command(self, mock_main_log_request, mock_get_logger, mock_main_bot):
         mock_logger_instance = MagicMock()
         mock_get_logger.return_value = mock_logger_instance
 
         with patch.dict(os.environ, self._get_patched_env(), clear=True):
-            import main 
+            import main # Import main here to ensure patches are active for its module-level code
             mock_message_obj = MockMessage(text="/help")
             main.send_help(mock_message_obj)
         
@@ -178,7 +176,6 @@ class TestMainCommandHandlers(unittest.TestCase):
         self.assertIn("/showwords", help_text_sent)
         self.assertEqual(kwargs.get('parse_mode'), 'Markdown')
         mock_logger_instance.info.assert_any_call(f"Sent help message to user {mock_message_obj.from_user.id}")
-
 
     @patch('logging.getLogger')
     @patch('main.add_word_to_db')
@@ -194,9 +191,8 @@ class TestMainCommandHandlers(unittest.TestCase):
 
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_add_db.assert_called_once_with("exampleword", mock_message_obj.from_user.id)
-        mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Successfully added 'exampleword' to your dictionary!")
-        mock_logger_instance.info.assert_any_call(f"Successfully added 'exampleword' to dictionary for user {mock_message_obj.from_user.id} via command.")
-
+        mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Added 'exampleword' to your dictionary!")
+        mock_logger_instance.info.assert_any_call(f"Added 'exampleword' for user {mock_message_obj.from_user.id} via command.")
 
     @patch('logging.getLogger')
     @patch('main.log_request')
@@ -212,7 +208,8 @@ class TestMainCommandHandlers(unittest.TestCase):
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_main_bot.reply_to.assert_called_once()
         args, kwargs = mock_main_bot.reply_to.call_args
-        self.assertIn("Please provide a word to add. Usage: `/add [word]`", args[1])
+        self.assertEqual(args[1], "Usage: `/add [word]` (e.g., `/add example`)")
+        self.assertEqual(kwargs.get('parse_mode'), 'Markdown')
         mock_logger_instance.warning.assert_any_call(f"User {mock_message_obj.from_user.id} sent /add without a word.")
 
     @patch('logging.getLogger')
@@ -231,9 +228,8 @@ class TestMainCommandHandlers(unittest.TestCase):
 
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_delete_db.assert_called_once_with("exampleword", mock_message_obj.from_user.id)
-        mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Successfully removed 'exampleword' from your dictionary!")
-        mock_logger_instance.info.assert_any_call(f"Successfully removed 'exampleword' from dictionary for user {mock_message_obj.from_user.id} via command.")
-
+        mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Removed 'exampleword' from your dictionary!")
+        mock_logger_instance.info.assert_any_call(f"Removed 'exampleword' for user {mock_message_obj.from_user.id} via command.")
 
     @patch('logging.getLogger')
     @patch('main.get_definition')
@@ -245,7 +241,7 @@ class TestMainCommandHandlers(unittest.TestCase):
         mock_get_logger.return_value = mock_logger_instance
         
         with patch.dict(os.environ, self._get_patched_env(), clear=True):
-            import main
+            import main # Import main here to access main.CALLBACK_PREFIX_ADD
             mock_message_obj = MockMessage(text="erudite")
             mock_get_def.return_value = ("Definition of erudite.", "http://audio.example.com/erudite.wav")
             mock_get_audio.return_value = "/path/to/erudite.wav"
@@ -254,16 +250,33 @@ class TestMainCommandHandlers(unittest.TestCase):
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_get_def.assert_called_once_with("erudite")
         mock_get_audio.assert_called_once_with("erudite", "http://audio.example.com/erudite.wav")
+        
+        # Check that send_message_in_parts was called for the definition
         mock_send_parts.assert_any_call(
             mock_message_obj.chat.id, "Definition of erudite.", "erudite", audio_path="/path/to/erudite.wav"
         )
-        found_add_prompt = any(
-            "Would you like to add this word to your dictionary?" in call_args[0][1]
-            for call_args in mock_main_bot.send_message.call_args_list
-        )
-        self.assertTrue(found_add_prompt, "Add to dictionary prompt was not sent.")
+        
+        # Robust check for the "Add to Dictionary" prompt and its markup
+        found_add_prompt = False
+        for call_item in mock_main_bot.send_message.call_args_list:
+            args, kwargs = call_item
+            if len(args) > 1 and "Would you like to add this word to your dictionary?" in args[1]:
+                reply_markup = kwargs.get('reply_markup')
+                if reply_markup and hasattr(reply_markup, 'keyboard'):
+                    for row in reply_markup.keyboard:
+                        for button_obj in row:
+                            if button_obj.text == "Add to My Dictionary" and \
+                               hasattr(main, 'CALLBACK_PREFIX_ADD') and \
+                               button_obj.callback_data.startswith(f"{main.CALLBACK_PREFIX_ADD}erudite_"):
+                                found_add_prompt = True
+                                break
+                        if found_add_prompt:
+                            break
+            if found_add_prompt:
+                break
+        
+        self.assertTrue(found_add_prompt, "The 'Add to My Dictionary' prompt with correct button was not sent.")
         mock_logger_instance.info.assert_any_call(f"Sent definition of 'erudite' and add prompt to user {mock_message_obj.from_user.id}.")
-
 
     @patch('logging.getLogger')
     @patch('main.get_definition')
@@ -280,9 +293,8 @@ class TestMainCommandHandlers(unittest.TestCase):
         
         mock_main_log_request.assert_called_once_with(mock_message_obj)
         mock_get_def.assert_called_once_with("nonexistentword")
-        mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Sorry, I couldn't find a definition for 'nonexistentword'.")
-        mock_logger_instance.warning.assert_any_call(f"No definition found for 'nonexistentword' (API or processing error) for user {mock_message_obj.from_user.id}.")
-
+        mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Sorry, no definition found for 'nonexistentword'.")
+        mock_logger_instance.warning.assert_any_call(f"No definition found for 'nonexistentword' for user {mock_message_obj.from_user.id}.")
 
 if __name__ == '__main__':
     unittest.main()

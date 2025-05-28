@@ -10,8 +10,8 @@ import os
 from typing import Tuple, Optional, List, Dict, Any, Union
 
 # Assuming these are correctly imported and function as expected
-from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db 
-    # Removed get_word_by_id as it's unused
+from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db, \
+    get_word_by_id # Added get_word_by_id for quiz stats
 from src.utilities import log_request, get_definition, format_text
 from src.audio_handler import get_audio_file
 from commands.start import get_welcome_message
@@ -48,14 +48,7 @@ if TOKEN is None:
 bot = telebot.TeleBot(TOKEN, num_threads=10)
 
 # --- Logging Configuration ---
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("bot.log"),
-        logging.StreamHandler()
-    ]
-)
+# logging.basicConfig moved to if __name__ == "__main__"
 logger = logging.getLogger(__name__)
 
 # --- In-memory storage for current quiz data (for simplicity) ---
@@ -491,6 +484,17 @@ def send_message_in_parts(chat_id: int, text: str, word: str, audio_path: Option
 
 # --- Bot Start ---
 if __name__ == "__main__":
+    # Configure logging here, so it's only active when main.py is run directly.
+    # This helps prevent issues if main.py is imported by other scripts (like tests)
+    # that might want to configure logging differently.
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler("bot.log"),
+            logging.StreamHandler()
+        ]
+    )
     logger.info("Initializing LexiLearn Bot...")
     # local_dictionary initialization is above
     
