@@ -2,37 +2,25 @@ import requests
 import logging
 from dotenv import load_dotenv
 import os
-import re # Added for re.sub
-from typing import Tuple, Optional, List, Dict, Any, Union # Added for Python 3.9 compatibility
+import re 
+from typing import Tuple, Optional, List, Dict, Any, Union
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Merriam-Webster API key for accessing dictionary services.
-MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
-# Logger instance for this module.
-# Ensure logger is available. It might be configured in main.py and imported,
-# or this module could be used standalone in scripts.
-if 'logger' not in globals(): # type: ignore # Mypy/Linter might complain about 'logger' not being defined
+if 'logger' not in globals(): 
     logger = logging.getLogger(__name__)
-    if not logger.hasHandlers(): # Avoid adding handlers multiple times
+    if not logger.hasHandlers(): 
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[logging.StreamHandler()] # Default to stream for scripts
+            handlers=[logging.StreamHandler()]
         )
 
+MERRIAM_WEBSTER_API_KEY = os.getenv("MERRIAM_WEBSTER_API_KEY")
 
-# This is the get_definition from the last read_files output
-# I am keeping the version of get_definition and other functions as they were in the last read_files output,
-# only modifying format_text and ensuring 'logger' is used.
 def get_definition(word: str) -> Tuple[Optional[str], Optional[str]]:
-    """
-    Fetches the definition and related information for a given word using the Merriam-Webster Learner's Dictionary API.
-    (This version is based on the last `read_files` output, assuming previous refactorings to it were not applied or lost)
-    """
     url = f"https://www.dictionaryapi.com/api/v3/references/learners/json/{word}?key={MERRIAM_WEBSTER_API_KEY}"
-    response = None # Initialize response
+    response = None 
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
@@ -45,8 +33,8 @@ def get_definition(word: str) -> Tuple[Optional[str], Optional[str]]:
         logger.error(f"API request failed for word '{word}'. Error: {type(e).__name__}")
         log_request("definition_api", word, success=False, error_message=str(e))
         user_message = "Sorry, I couldn't fetch the definition due to a network or API issue."
-        current_response = e.response if hasattr(e, 'response') else None # Check if response exists on exception
-        if current_response is not None: # Check if current_response is not None
+        current_response = e.response if hasattr(e, 'response') else None 
+        if current_response is not None: 
             if current_response.status_code == 404:
                  user_message = f"No definition found for '{word}'. Please check the spelling."
             elif current_response.status_code >= 500:
@@ -60,11 +48,10 @@ def get_definition(word: str) -> Tuple[Optional[str], Optional[str]]:
         log_request("definition_api_json_decode", word, success=False, error_message=f"JSONDecodeError: {e_json.msg}")
         return "Sorry, there was an issue processing the data from the dictionary service.", None
 
-    if not data: # Handles empty list or None
+    if not data: 
         logger.info(f"No definition data found for '{word}' (empty data). API Response: {data}")
         return f"No definition found for '{word}'. Please ensure it's a valid English word.", None
     
-    # Handle cases where data is a list of strings (suggestions)
     if isinstance(data, list) and all(isinstance(item, str) for item in data):
         suggestions = ", ".join(data)
         logger.info(f"API returned suggestions for '{word}': {suggestions}")
@@ -76,25 +63,22 @@ def get_definition(word: str) -> Tuple[Optional[str], Optional[str]]:
 
     result = ""
     audio_link = None
-    # Using the simpler parsing logic from the last `read_files` output for `get_definition`
     for entry in data:
-        if not isinstance(entry, dict): continue # Skip if not a dictionary (e.g. if suggestions are mixed with other data)
+        if not isinstance(entry, dict): continue 
 
-        if entry.get('fl'): # Part of speech
+        if entry.get('fl'): 
             result += f"\n\nPart of Speech: {entry['fl']}\n"
-        if entry.get('shortdef'): # Short definitions
+        if entry.get('shortdef'): 
             result += "\nDefinitions:\n"
             for definition_item in entry['shortdef']:
                 result += f"- {definition_item}\n"
         
-        # Pronunciation and audio link
         if entry.get('hwi') and entry['hwi'].get('prs'):            
             for pr in entry['hwi']['prs']:
-                if pr.get('mw'): # Pronunciation text
-                    result += f"\nPronunciation: {pr['mw']}\n" # Simplified output
-                if not audio_link and pr.get('sound') and pr['sound'].get('audio'): # Take first audio
+                if pr.get('mw'): 
+                    result += f"\nPronunciation: {pr['mw']}\n" 
+                if not audio_link and pr.get('sound') and pr['sound'].get('audio'): 
                     audio_file_name = pr['sound']['audio']
-                    # Simplified subdir logic for now, matching common patterns
                     subdir = word[0] if word else ""
                     if audio_file_name.startswith("bix"): subdir = "bix"
                     elif audio_file_name.startswith("gg"): subdir = "gg"
@@ -105,7 +89,6 @@ def get_definition(word: str) -> Tuple[Optional[str], Optional[str]]:
                     else:
                         logger.warning(f"Could not determine audio subdirectory for {audio_file_name} (word: {word})")
         
-        # Usage Examples (simplified from the previous complex parsing)
         if entry.get('def'):
             for def_item in entry.get('def', []):
                 if def_item.get('sseq'):
@@ -119,36 +102,30 @@ def get_definition(word: str) -> Tuple[Optional[str], Optional[str]]:
                                             if "Usage Examples:" not in result: result += "\nUsage Examples:\n"
                                             for vis_item in dt_element[1]:
                                                 if isinstance(vis_item, dict) and vis_item.get('t'):
-                                                    result += f"- {format_text(vis_item['t'])}\n" # Format example text
-        if result: # If we got any content from this entry, break (take the first good entry)
+                                                    result += f"- {format_text(vis_item['t'])}\n" 
+        if result: 
             break
             
-    if not result: # If loop completes and result is still empty
+    if not result: 
         logger.info(f"No processable content found in API data for '{word}'.")
         return f"No definition found for '{word}'.", None
 
     return result.strip(), audio_link
 
-
 def format_text(text: str) -> str:
-    """
-    Formats text containing dictionary-specific tags (like {it} for italics, {phrase} for bold)
-    into Markdown compatible formatting for Telegram.
-    """
-    if not text: return "" # type: ignore # Ensure it handles None gracefully if type hint changes
+    if not text: return "" 
     
-    text = text.replace('{it}', '_').replace('{/it}', '_')
-    text = text.replace('{phrase}', '*').replace('{/phrase}', '*')
-    text = text.replace('{b}', '*').replace('{/b}', '*')
-    text = text.replace('{inf}', '').replace('{/inf}', '') 
-    text = text.replace('{sup}', '').replace('{/sup}', '') 
+    processed_text = text
+    processed_text = processed_text.replace('{it}', '_').replace('{/it}', '_')
+    processed_text = processed_text.replace('{phrase}', '*').replace('{/phrase}', '*')
+    processed_text = processed_text.replace('{b}', '*').replace('{/b}', '*')
+    processed_text = processed_text.replace('{inf}', '').replace('{/inf}', '') 
+    processed_text = processed_text.replace('{sup}', '').replace('{/sup}', '') 
 
-    text = text.replace(' :', ':')
-    text = re.sub(r'\s\s+', ' ', text) # Replace multiple spaces with a single space
+    processed_text = processed_text.replace(' :', ':')
+    processed_text = re.sub(r'\s\s+', ' ', processed_text) 
 
-    # Removed aggressive unpaired tag cleanup. Telegram might handle minor issues.
-    # The focus is on converting known tags.
-    return text.strip()
+    return processed_text.strip()
 
 def get_translation(word: str) -> Optional[str]:
     logger.info(f"Translation requested for word='{word}' (Not Implemented)")
