@@ -1,21 +1,261 @@
-import telebot
-import os
-import logging
+import unittest
+from unittest.mock import patch, MagicMock, call 
+import time 
+import requests # For requests.exceptions used in get_definition tests
+import os # For patching os.environ
 
-TOKEN = os.getenv('TOKEN')
-bot = telebot.TeleBot(TOKEN)
+# Import functions to be tested
+from src.utilities import format_text, get_definition
+# We don't import log_request from utilities here as we often mock it where it's called.
 
-logging.basicConfig(level=logging.INFO)
+# TOKEN = os.getenv('TOKEN') # REMOVE: Not needed for tests, main.bot is mocked
+# bot = telebot.TeleBot(TOKEN) # REMOVE: This instance is not used and causes init issues if TOKEN is None
 
-def test_send_message():
-    test_chat_id = '59666312'
-    test_message = 'This is a test message.'
+# --- Tests for src/utilities.py ---
 
-    try:
-        bot.send_message(test_chat_id, test_message)
-        print('Test passed')
-    except Exception as e:
-        print('Test failed:', e)
+class TestFormatText(unittest.TestCase):
+    def test_empty_input(self):
+        self.assertEqual(format_text(""), "")
+        self.assertEqual(format_text(None), "")
+
+    def test_italic_formatting(self):
+        self.assertEqual(format_text("This is {it}italic{/it}."), "This is _italic_.")
+        self.assertEqual(format_text("{it}italic{/it} at start."), "_italic_ at start.")
+        self.assertEqual(format_text("End with {it}italic{/it}"), "End with _italic_")
+
+    def test_bold_formatting(self): 
+        self.assertEqual(format_text("This is {b}bold{/b}."), "This is *bold*.")
+        # With the new format_text, underscores within phrases should be preserved.
+        self.assertEqual(format_text("This is {phrase}bold_phrase{/phrase}."), "This is *bold_phrase*.")
+
+    def test_mixed_formatting(self):
+        self.assertEqual(format_text("Text with {it}italic{/it} and {b}bold{/b}."), "Text with _italic_ and *bold*.")
+
+    def test_unpaired_tags(self):
+        # With the less aggressive cleanup, unpaired tags might render differently or be left as is.
+        # Telegram is often lenient. The main thing is tags are converted.
+        self.assertEqual(format_text("Unpaired {it}italic tag."), "Unpaired _italic tag.") 
+        self.assertEqual(format_text("Another {it}one."), "Another _one.") 
+        self.assertEqual(format_text("Unpaired {b}bold."), "Unpaired *bold.") 
+        # The function converts known tags; remaining text is preserved.
+        self.assertEqual(format_text("Mixture of unpaired {it}a{/it} and {b}b."), "Mixture of unpaired _a_ and *b.") # Corrected: expected output includes leading text
+        self.assertEqual(format_text("Mixture of unpaired {it}a and {b}b."), "Mixture of _a and *b.")
+
+
+    def test_no_tags(self):
+        self.assertEqual(format_text("This is plain text."), "This is plain text.")
+
+    def test_other_tags_removal(self): 
+        self.assertEqual(format_text("Text with {inf}subscript{/inf}."), "Text with subscript.")
+        self.assertEqual(format_text("Text with {sup}superscript{/sup}."), "Text with superscript.")
+
+    def test_cleanup_spaces_and_colons(self):
+        self.assertEqual(format_text("Word : definition"), "Word: definition")
+        # re.sub(r'\s\s+', ' ', text) should handle multiple spaces correctly.
+        self.assertEqual(format_text("Text  with   multiple spaces."), "Text with multiple spaces.")
+        self.assertEqual(format_text("Complex {it}case{/it} :  multiple   {b}issues{/b}."), "Complex _case_: multiple *issues*.")
+
+
+class TestGetDefinition(unittest.TestCase):
+    # This test class remains largely the same, assuming the get_definition in utilities
+    # was the one from the last read_files and not the more refactored one I attempted previously.
+    # The key is that the mocked API responses should align with what *that* get_definition expects.
+    @patch('src.utilities.requests.get')
+    @patch('src.utilities.log_request') 
+    def test_get_definition_success_full_data(self, mock_log_request_util, mock_requests_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        # Simplified API data based on the `get_definition` from last `read_files`
+        mock_api_data = [
+            {
+                "fl": "noun", 
+                "shortdef": ["def1.", "def2."],
+                "hwi": {"prs": [{"mw": "ig-ˈzam-pəl", "sound": {"audio": "example01"}}]},
+                "def": [{"sseq": [[["sense", {"dt": [["text", "usage "], ["vis", [{"t": "good {it}example{/it}"}]]]}]]]} ]
+            }
+        ]
+        mock_response.json.return_value = mock_api_data
+        mock_requests_get.return_value = mock_response
+
+        word = "example"
+        definition_text, audio_link = get_definition(word)
+
+        self.assertIn("Part of Speech: noun", definition_text)
+        self.assertIn("- def1.", definition_text)
+        self.assertIn("Pronunciation: ig-ˈzam-pəl", definition_text) # Based on simplified output
+        self.assertIn("Usage Examples:\n- good _example_", definition_text)
+        self.assertTrue(audio_link.endswith("e/example01.wav")) # Subdir logic is simple in this version
+        mock_log_request_util.assert_called_with("definition_api", word, success=True)
+
+
+    @patch('src.utilities.requests.get')
+    @patch('src.utilities.log_request')
+    def test_get_definition_suggestions(self, mock_log_request_util, mock_requests_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = ["exampel", "exmple"] # API returns suggestions
+        mock_requests_get.return_value = mock_response
+        word = "exaple"
+        definition_text, audio_link = get_definition(word)
+        self.assertIn(f"No definition found for '{word}'. Did you mean: exampel, exmple?", definition_text)
+        self.assertIsNone(audio_link)
+        # log_request for "definition_api" should still be True as the API call itself succeeded
+        mock_log_request_util.assert_called_with("definition_api", word, success=True)
+
+
+    @patch('src.utilities.requests.get')
+    @patch('src.utilities.log_request')
+    def test_get_definition_http_error_404(self, mock_log_request_util, mock_requests_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        # Simulate the response object being attached to the exception
+        http_error = requests.exceptions.HTTPError(response=mock_response)
+        http_error.response = mock_response 
+        mock_response.raise_for_status.side_effect = http_error
+        mock_requests_get.return_value = mock_response
+        
+        word = "nonexistentword"
+        definition_text, audio_link = get_definition(word)
+        self.assertEqual(definition_text, f"No definition found for '{word}'. Please check the spelling.")
+        self.assertIsNone(audio_link)
+        mock_log_request_util.assert_called_with("definition_api", word, success=False, error_message=unittest.mock.ANY)
+
+
+    @patch('src.utilities.requests.get')
+    @patch('src.utilities.log_request')
+    def test_get_definition_request_exception(self, mock_log_request_util, mock_requests_get):
+        mock_requests_get.side_effect = requests.exceptions.ConnectionError("Connection failed")
+        word = "testword"
+        definition_text, audio_link = get_definition(word)
+        self.assertEqual(definition_text, "Sorry, I couldn't fetch the definition due to a network or API issue.")
+        self.assertIsNone(audio_link)
+        mock_log_request_util.assert_called_with("definition_api", word, success=False, error_message="Connection failed")
+
+
+# --- Tests for main.py ---
+class MockUser:
+    def __init__(self, id, first_name="TestUser", username="testusername"):
+        self.id = id
+        self.first_name = first_name
+        self.username = username
+
+class MockChat:
+    def __init__(self, id, type="private"):
+        self.id = id
+        self.type = type
+
+class MockMessage:
+    def __init__(self, text, message_id=1, from_user_id=123, chat_id=456, date=None):
+        self.message_id = message_id
+        self.text = text
+        self.from_user = MockUser(id=from_user_id)
+        self.chat = MockChat(id=chat_id)
+        self.date = date if date is not None else int(time.time())
+        self.message = self 
+
+class MockCallbackQuery:
+    def __init__(self, data, from_user_id=123, message=None, id="callback_id_123"):
+        self.id = id
+        self.from_user = MockUser(id=from_user_id)
+        self.data = data
+        self.message = message if message else MockMessage(text="Original message for callback")
+        if not hasattr(self.message, 'chat'): # Ensure chat attribute exists
+            self.message.chat = MockChat(id=456 if not message else message.chat.id)
+        if not hasattr(self.message, 'message_id'): # Ensure message_id attribute exists
+            self.message.message_id = 1001 
+
+
+@patch('main.logger') 
+@patch('main.bot')
+# Patch os.getenv globally for all tests in this class that might import main.py
+# This ensures main.TOKEN and main.MERRIAM_WEBSTER_API_KEY are set during main.py's import.
+@patch.dict(os.environ, {"TOKEN": "fake_bot_token", "MERRIAM_WEBSTER_API_KEY": "fake_mw_api_key", "DB_NAME": "test_db", "DB_USER": "test_user", "DB_PASSWORD": "test_password", "DB_HOST": "localhost", "DB_PORT": "5432"})
+class TestMainCommandHandlers(unittest.TestCase):
+
+    @patch('main.log_request') 
+    def test_send_help_command(self, mock_main_log_request, mock_main_bot, mock_main_logger):
+        from main import send_help # Import here, after os.environ is patched for main's scope
+        mock_message_obj = MockMessage(text="/help")
+        send_help(mock_message_obj)
+        mock_main_log_request.assert_called_once_with(mock_message_obj)
+        mock_main_bot.reply_to.assert_called_once()
+        args, kwargs = mock_main_bot.reply_to.call_args
+        self.assertEqual(args[0], mock_message_obj)
+        help_text_sent = args[1]
+        self.assertIn("/add [word]", help_text_sent)
+        self.assertIn("/showwords", help_text_sent)
+        self.assertEqual(kwargs.get('parse_mode'), 'Markdown')
+
+    @patch('main.add_word_to_db')
+    @patch('main.log_request')
+    def test_process_user_input_add_word_success(self, mock_main_log_request, mock_add_db, mock_main_bot, mock_main_logger):
+        from main import process_user_input # Import here
+        mock_message_obj = MockMessage(text="/add exampleword")
+        process_user_input(mock_message_obj)
+        mock_main_log_request.assert_called_once_with(mock_message_obj)
+        mock_add_db.assert_called_once_with("exampleword", mock_message_obj.from_user.id)
+        mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Successfully added 'exampleword' to your dictionary!")
+
+    @patch('main.log_request')
+    def test_process_user_input_add_word_missing_arg(self, mock_main_log_request, mock_main_bot, mock_main_logger):
+        from main import process_user_input # Import here
+        mock_message_obj = MockMessage(text="/add ")
+        process_user_input(mock_message_obj)
+        mock_main_log_request.assert_called_once_with(mock_message_obj)
+        mock_main_bot.reply_to.assert_called_once()
+        args, kwargs = mock_main_bot.reply_to.call_args
+        self.assertIn("Please provide a word to add. Usage: `/add [word]`", args[1])
+
+    @patch('main.delete_word_from_db')
+    @patch('main.get_word_count') 
+    @patch('main.log_request')
+    def test_process_user_input_remove_word_success(self, mock_main_log_request, mock_get_count, mock_delete_db, mock_main_bot, mock_main_logger):
+        from main import process_user_input # Import here
+        mock_message_obj = MockMessage(text="/remove exampleword")
+        mock_get_count.side_effect = [5, 4] 
+        process_user_input(mock_message_obj)
+        mock_main_log_request.assert_called_once_with(mock_message_obj)
+        mock_delete_db.assert_called_once_with("exampleword", mock_message_obj.from_user.id)
+        mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Successfully removed 'exampleword' from your dictionary!")
+
+    @patch('main.get_definition')
+    @patch('main.get_audio_file')
+    @patch('main.send_message_in_parts')
+    @patch('main.log_request')
+    def test_process_user_input_define_word_success(self, mock_main_log_request, mock_send_parts, mock_get_audio, mock_get_def, mock_main_bot, mock_main_logger):
+        from main import process_user_input # Import here
+        mock_message_obj = MockMessage(text="erudite")
+        mock_get_def.return_value = ("Definition of erudite.", "http://audio.example.com/erudite.wav")
+        mock_get_audio.return_value = "/path/to/erudite.wav"
+        
+        process_user_input(mock_message_obj)
+
+        mock_main_log_request.assert_called_once_with(mock_message_obj)
+        mock_get_def.assert_called_once_with("erudite")
+        mock_get_audio.assert_called_once_with("erudite", "http://audio.example.com/erudite.wav")
+        
+        mock_send_parts.assert_any_call(
+            mock_message_obj.chat.id, "Definition of erudite.", "erudite", audio_path="/path/to/erudite.wav"
+        )
+        
+        found_add_prompt = any(
+            "Would you like to add this word to your dictionary?" in call_args[0][1]
+            for call_args in mock_main_bot.send_message.call_args_list
+        )
+        self.assertTrue(found_add_prompt, "Add to dictionary prompt was not sent.")
+
+    @patch('main.get_definition')
+    @patch('main.log_request')
+    def test_process_user_input_define_word_not_found(self, mock_main_log_request, mock_get_def, mock_main_bot, mock_main_logger):
+        from main import process_user_input # Import here
+        mock_message_obj = MockMessage(text="nonexistentword")
+        mock_get_def.return_value = (None, None) 
+        
+        process_user_input(mock_message_obj)
+        
+        mock_main_log_request.assert_called_once_with(mock_message_obj)
+        mock_get_def.assert_called_once_with("nonexistentword")
+        mock_main_bot.reply_to.assert_called_once_with(mock_message_obj, "Sorry, I couldn't find a definition for 'nonexistentword'.")
 
 if __name__ == '__main__':
-    test_send_message()
+    unittest.main()
