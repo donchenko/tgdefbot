@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.9-slim-bullseye
+FROM python:3.10-slim-bullseye
 
 WORKDIR /app
 

@@ -151,8 +151,9 @@ def format_text(text: str) -> str:
     return text.strip()
 
 def get_translation(word: str) -> str | None:
+def get_translation(word: str) -> Optional[str]: # Corrected type hint
     logger.info(f"Translation requested for word='{word}' (Not Implemented)")
-    return None
+    return None # This line is fine, returns None as per Optional[str]
 
 def log_request(request_type: str, identifier: str, success: bool = True, error_message: Optional[str] = None) -> None:
     if success:
