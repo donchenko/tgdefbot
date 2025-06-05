@@ -138,7 +138,7 @@ def callback_inline(call):
 
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
-            markup.add(types.InlineKeyboardButton("Mark as Learned", callback_data=f"delete_{word_to_define}_{user_id}"))
+            markup.add(types.InlineKeyboardButton("Удалить из словаря", callback_data=f"delete_{word_to_define}_{user_id}"))
             
             # Get audio file if audio link is present
             audio_path = None
@@ -219,8 +219,11 @@ def process_user_input(message):
         definition, audio_link = get_definition(text)
         send_message_in_parts(chat_id, definition, text)
         markup = types.InlineKeyboardMarkup()
-        btn = types.InlineKeyboardButton("Add to Dictionary", callback_data=f"add_{text}_{message.from_user.id}")
-        markup.add(btn)
+        add_btn = types.InlineKeyboardButton("Add to Dictionary", callback_data=f"add_{text}_{message.from_user.id}")
+        dict_btn = types.InlineKeyboardButton("My Dictionary", callback_data=f"showwords_{message.from_user.id}")
+        home_btn = types.InlineKeyboardButton("Home", callback_data=f"home_{message.from_user.id}")
+        markup.row(add_btn)
+        markup.row(dict_btn, home_btn)
         bot.send_message(chat_id, "Would you like to add this word to your dictionary?", reply_markup=markup)
 
 # Function to send a message in parts to handle long messages
