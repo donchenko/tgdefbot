@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import logging
 import os
 from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db, get_random_word
-from src.utilities import log_request, get_definition, format_text
+from src.utilities import get_definition, get_translation, format_text
 from src.audio_handler import get_audio_file
 from commands.start import get_welcome_message
 
@@ -30,6 +30,7 @@ logging.basicConfig(level=logging.INFO)
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.reply_to(message, get_welcome_message())
+    send_home_menu(message.chat.id, message.from_user.id)
 
 # Handler for the "/help" command
 @bot.message_handler(commands=['help'])
@@ -41,20 +42,46 @@ def send_help(message):
     - /translate [word]: Get the translation of a word to Russian
     - /remove [word]: Remove a word from your dictionary
     - /random: Get a random word from your dictionary
+    - /home: Show the main menu
     - /help: Show this help message
     """
     bot.reply_to(message, help_message)
 
+def send_home_menu(chat_id, user_id):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("Add Word", callback_data=f"promptadd_{user_id}"))
+    markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
+    markup.add(types.InlineKeyboardButton("Random Word", callback_data=f"random_{user_id}"))
+    bot.send_message(chat_id, "Select an option:", reply_markup=markup)
+
+
+@bot.message_handler(commands=['home'])
+def show_home(message):
+    send_home_menu(message.chat.id, message.from_user.id)
+
+
+@bot.message_handler(commands=['add'])
+def add_word_command(message):
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        bot.reply_to(message, "Usage: /add <word>")
+        return
+    word = parts[1].strip()
+    add_word_to_db(word, message.from_user.id)
+    bot.reply_to(message, f"'{word}' added to your dictionary.")
+
+
 @bot.message_handler(commands=['random'])
 def send_random_word(message):
     random_word = get_random_word(message.from_user.id)
-    markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("Another", callback_data=f"random_{message.from_user.id}"))
     if random_word:
-        send_message_in_parts(message.chat.id,
-                             f"Here's a random word from your dictionary: {random_word}",
-                             random_word,
-                             markup=markup)
+        definition, audio_link = get_definition(random_word)
+        audio_path = get_audio_file(random_word, audio_link) if audio_link else None
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("Another", callback_data=f"random_{message.from_user.id}"))
+        markup.add(types.InlineKeyboardButton("Home", callback_data=f"home_{message.from_user.id}"))
+        markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{message.from_user.id}"))
+        send_message_in_parts(message.chat.id, definition, random_word, audio_path, markup)
     else:
         bot.send_message(message.chat.id, "Your dictionary is empty.")
 
@@ -151,16 +178,25 @@ def callback_inline(call):
 
         elif action == "random":
             random_word = get_random_word(user_id)
-            markup = types.InlineKeyboardMarkup()
-            markup.add(types.InlineKeyboardButton("Another", callback_data=f"random_{user_id}"))
             if random_word:
-                send_message_in_parts(call.message.chat.id,
-                                     f"Here's a random word from your dictionary: {random_word}",
-                                     random_word,
-                                     markup=markup)
+                definition, audio_link = get_definition(random_word)
+                audio_path = get_audio_file(random_word, audio_link) if audio_link else None
+                markup = types.InlineKeyboardMarkup()
+                markup.add(types.InlineKeyboardButton("Another", callback_data=f"random_{user_id}"))
+                markup.add(types.InlineKeyboardButton("Home", callback_data=f"home_{user_id}"))
+                markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
+                send_message_in_parts(call.message.chat.id, definition, random_word, audio_path, markup)
                 bot.answer_callback_query(call.id)
             else:
                 bot.answer_callback_query(call.id, "Your dictionary is empty.")
+
+        elif action == "home":
+            send_home_menu(call.message.chat.id, user_id)
+            bot.answer_callback_query(call.id)
+
+        elif action == "promptadd":
+            bot.send_message(call.message.chat.id, "Use /add <word> to add a new word to your dictionary.")
+            bot.answer_callback_query(call.id)
 
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
