@@ -141,7 +141,7 @@ def callback_inline(call):
 
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("Dictionary", callback_data=f"showwords_{user_id}"))
-            markup.add(types.InlineKeyboardButton("Удалить из словаря", callback_data=f"delete_{word_to_define}_{user_id}"))
+            markup.add(types.InlineKeyboardButton("Delete from Dictionary", callback_data=f"delete_{word_to_define}_{user_id}"))
             
             # Get audio file if audio link is present
             audio_path = None
