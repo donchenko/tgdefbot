@@ -1,13 +1,9 @@
-import requests
-import random
-import time
 import telebot
 from telebot import types
 from dotenv import load_dotenv
-from bs4 import BeautifulSoup
 import logging
 import os
-from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db
+from src.database import add_word_to_db, get_words_from_db, get_word_count, delete_word_from_db, get_random_word
 from src.utilities import log_request, get_definition, format_text
 from src.audio_handler import get_audio_file
 from commands.start import get_welcome_message
@@ -41,13 +37,26 @@ def send_help(message):
     help_message = """
     Here are the available commands:
     - /start: Start the bot
-    - /add [word]: Add a word to your local dictionary
+    - /add [word]: Add a word to your dictionary
     - /translate [word]: Get the translation of a word to Russian
-    - /remove [word]: Remove a word from your local dictionary
-    - /reminder: Get a random word reminder from your local dictionary
+    - /remove [word]: Remove a word from your dictionary
+    - /random: Get a random word from your dictionary
     - /help: Show this help message
     """
     bot.reply_to(message, help_message)
+
+@bot.message_handler(commands=['random'])
+def send_random_word(message):
+    random_word = get_random_word(message.from_user.id)
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("Another", callback_data=f"random_{message.from_user.id}"))
+    if random_word:
+        send_message_in_parts(message.chat.id,
+                             f"Here's a random word from your dictionary: {random_word}",
+                             random_word,
+                             markup=markup)
+    else:
+        bot.send_message(message.chat.id, "Your dictionary is empty.")
 
 @bot.message_handler(commands=['showwords'])
 def show_all_words(message, page=1, user_id=None):
@@ -140,6 +149,19 @@ def callback_inline(call):
             show_all_words(call.message, page, user_id=user_id)
             bot.answer_callback_query(call.id)
 
+        elif action == "random":
+            random_word = get_random_word(user_id)
+            markup = types.InlineKeyboardMarkup()
+            markup.add(types.InlineKeyboardButton("Another", callback_data=f"random_{user_id}"))
+            if random_word:
+                send_message_in_parts(call.message.chat.id,
+                                     f"Here's a random word from your dictionary: {random_word}",
+                                     random_word,
+                                     markup=markup)
+                bot.answer_callback_query(call.id)
+            else:
+                bot.answer_callback_query(call.id, "Your dictionary is empty.")
+
 # Handler for processing user input
 @bot.message_handler(func=lambda message: True)
 def process_user_input(message):
@@ -156,10 +178,6 @@ def process_user_input(message):
         else:
             send_message_in_parts(chat_id, f"Translation not found for the word '{word}'.", word)
     
-    elif text.startswith('/reminder'):
-        random_word = random.choice(list(local_dictionary.keys()))
-        local_dictionary[random_word] = time.time()
-        send_message_in_parts(chat_id, f"Here's a random word from your local dictionary: {random_word}", random_word)
     
     else:
         definition, audio_link = get_definition(text)
@@ -192,6 +210,5 @@ def send_message_in_parts(chat_id, text, word, audio_path=None, markup=None, max
 
 # Start the bot
 if __name__ == "__main__":
-    local_dictionary = {}
     logging.info("Starting the bot...")
     bot.polling()
