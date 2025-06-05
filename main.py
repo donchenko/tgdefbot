@@ -116,6 +116,9 @@ def show_all_words(message, page=1, user_id=None):
             markup.add(types.InlineKeyboardButton("Next >>", callback_data=next_callback_data))
             logging.info(f"Added Next button with callback_data: {next_callback_data}")
 
+        # Home button to return to the main menu
+        markup.add(types.InlineKeyboardButton("Home", callback_data=f"home_{user_id}"))
+
         bot.send_message(message.chat.id, "Your words:", reply_markup=markup)
     else:
         logging.info(f"No words found for user {user_id} on page {page}")
