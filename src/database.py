@@ -127,3 +127,29 @@ def get_audio_path(word):
     if audio_path:
         return audio_path[0]
     return None
+
+def get_random_word(user_id):
+    """Fetch a random word for a given user."""
+    conn = connect_to_db()
+    if conn is None:
+        return None
+    cursor = conn.cursor()
+    logging.info(f"get_random_word called with user_id={user_id}")
+
+    cursor.execute(
+        """
+        SELECT w.word FROM Words w
+        INNER JOIN UserWords uw ON w.word_id = uw.word_id
+        WHERE uw.user_id = %s
+        ORDER BY RANDOM()
+        LIMIT 1
+        """,
+        (user_id,)
+    )
+
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if result:
+        return result[0]
+    return None
